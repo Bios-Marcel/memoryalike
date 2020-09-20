@@ -1,6 +1,10 @@
 package main
 
-import "github.com/gdamore/tcell"
+import (
+	"fmt"
+
+	"github.com/gdamore/tcell"
+)
 
 const (
 	gameOverMessage = "GAME OVER"
@@ -50,6 +54,8 @@ func (r *renderer) draw(targetScreen tcell.Screen, session *sessionState) {
 			targetScreen.SetContent(nextX, 0, char, nil, tcell.StyleDefault)
 			nextX++
 		}
+
+		r.printScoreMessage(targetScreen, session, 0, 2)
 	case gameOver:
 		targetScreen.Clear()
 		nextX := 0
@@ -57,8 +63,20 @@ func (r *renderer) draw(targetScreen tcell.Screen, session *sessionState) {
 			targetScreen.SetContent(nextX, 0, char, nil, tcell.StyleDefault)
 			nextX++
 		}
+
+		r.printScoreMessage(targetScreen, session, 0, 2)
 	}
 	targetScreen.Show()
+}
+
+func (r *renderer) printScoreMessage(targetScreen tcell.Screen, session *sessionState, x, y int) {
+	nextX := x
+	scoreMessage := fmt.Sprintf("Your score is %d out of possible %d. Amonut of invalid key presses: %d.",
+		session.score, len(session.gameBoard)*scorePerGuess, session.invalidKeyPresses)
+	for _, char := range scoreMessage {
+		targetScreen.SetContent(nextX, 2, char, nil, tcell.StyleDefault)
+		nextX++
+	}
 }
 
 // createScreen generates a ready to use screen. The screen has

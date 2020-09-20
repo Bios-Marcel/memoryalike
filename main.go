@@ -21,23 +21,6 @@ const (
 	victory
 )
 
-// sessionState represents all game state for a session. All operations on
-// this state should make sure that the state is locked using the internal
-// mutex.
-type sessionState struct {
-	mutex *sync.Mutex
-
-	currentGameState gameState
-	score            int
-
-	gameBoard     []rune
-	indicesToHide []int
-	runePositions map[rune]int
-
-	cellsHorizontal int
-	cellsVertical   int
-}
-
 func main() {
 	screen, screenCreationError := createScreen()
 	if screenCreationError != nil {
@@ -63,6 +46,9 @@ func main() {
 				if event.Key() == tcell.KeyCtrlC {
 					screen.Fini()
 					os.Exit(0)
+				} else if event.Key() == tcell.KeyEscape {
+					//SURRENDER!
+					currentSessionState.currentGameState = gameOver
 				} else if event.Key() == tcell.KeyRune {
 					keyEvents = append(keyEvents, event)
 				}

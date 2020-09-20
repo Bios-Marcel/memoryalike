@@ -10,6 +10,27 @@ import (
 	"github.com/gdamore/tcell"
 )
 
+const scorePerGuess = 5
+
+// sessionState represents all game state for a session. All operations on
+// this state should make sure that the state is locked using the internal
+// mutex.
+type sessionState struct {
+	mutex *sync.Mutex
+
+	currentGameState gameState
+	score            int
+	//invalidKeyPresses counts the invalid keyPresses made by the player.
+	invalidKeyPresses int
+
+	gameBoard     []rune
+	indicesToHide []int
+	runePositions map[rune]int
+
+	cellsHorizontal int
+	cellsVertical   int
+}
+
 // newSessionState produces a ready-to-use session state. The ticker that
 // hides cell contents is started on construction.
 func newSessionState(width, height, difficulty int) *sessionState {
@@ -127,6 +148,8 @@ func (s *sessionState) applyKeyEvents(keyEvents []*tcell.EventKey) {
 		//mark cell as "correctly guessed".
 		if s.gameBoard[runeIndex] == fullBlock {
 			s.gameBoard[runeIndex] = checkMark
+		} else {
+			s.invalidKeyPresses++
 		}
 	}
 
@@ -149,7 +172,7 @@ func (s *sessionState) updateGameState() {
 		}
 	}
 
-	s.score = checkMarkCount
+	s.score = checkMarkCount*scorePerGuess - s.invalidKeyPresses*2
 
 	//if at least 40 percent of the board is fullblocks, the player lost.
 	//In case of a normal game for example, this should mean 4 fullBlocks.
@@ -157,8 +180,14 @@ func (s *sessionState) updateGameState() {
 	fullBlockCountFloat := float32(fullBlockCount)
 	if fullBlockCount != 0 && fullBlockCountFloat/lengthFloat >= 0.4 {
 		s.currentGameState = gameOver
-	} else if leftOverChars == 0 {
-		s.currentGameState = victory
+	} else if leftOverChars == 0 && fullBlockCount == 0 {
+		//The game is only over, if there are no full blocks left and no
+		//unmasked cells left.
+		if s.score <= 0 {
+			s.currentGameState = gameOver
+		} else {
+			s.currentGameState = victory
+		}
 	}
 }
 
