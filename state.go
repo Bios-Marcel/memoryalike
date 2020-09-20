@@ -153,7 +153,9 @@ func (s *sessionState) updateGameState() {
 
 	//if at least 40 percent of the board is fullblocks, the player lost.
 	//In case of a normal game for example, this should mean 4 fullBlocks.
-	if fullBlockCount != 0 && len(s.gameBoard)/fullBlockCount <= 4 {
+	lengthFloat := float32(len(s.gameBoard))
+	fullBlockCountFloat := float32(fullBlockCount)
+	if fullBlockCount != 0 && fullBlockCountFloat/lengthFloat >= 0.4 {
 		s.currentGameState = gameOver
 	} else if leftOverChars == 0 {
 		s.currentGameState = victory
