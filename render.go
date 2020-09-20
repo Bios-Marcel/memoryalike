@@ -55,7 +55,7 @@ func (r *renderer) draw(targetScreen tcell.Screen, session *sessionState) {
 		r.printLine(targetScreen, restartMessage, 0, 4)
 	case gameOver:
 		targetScreen.Clear()
-		r.printLine(targetScreen, victoryMessage, 0, 0)
+		r.printLine(targetScreen, gameOverMessage, 0, 0)
 		r.printScoreMessage(targetScreen, session, 0, 2)
 		r.printLine(targetScreen, restartMessage, 0, 4)
 	}
