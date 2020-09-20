@@ -49,6 +49,14 @@ func main() {
 				} else if event.Key() == tcell.KeyEscape {
 					//SURRENDER!
 					currentSessionState.currentGameState = gameOver
+				} else if event.Key() == tcell.KeyCtrlR {
+					//RESTART!
+					//Make sure there's no invalid key events in the
+					//queue to avoid faulty point loss.
+					keyEvents = keyEvents[:0]
+					//Remove previous game over message and such.
+					screen.Clear()
+					currentSessionState = newSessionState(width, height, difficulty)
 				} else if event.Key() == tcell.KeyRune {
 					keyEvents = append(keyEvents, event)
 				}

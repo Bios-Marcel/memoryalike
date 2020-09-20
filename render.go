@@ -9,6 +9,7 @@ import (
 const (
 	gameOverMessage = "GAME OVER"
 	victoryMessage  = "Congratulations! You have won!"
+	restartMessage  = "Hit 'Ctrl R' to restart the game."
 )
 
 // renderer represents a utility object to present a sessionState on a
@@ -49,32 +50,28 @@ func (r *renderer) draw(targetScreen tcell.Screen, session *sessionState) {
 		}
 	case victory:
 		targetScreen.Clear()
-		nextX := 0
-		for _, char := range victoryMessage {
-			targetScreen.SetContent(nextX, 0, char, nil, tcell.StyleDefault)
-			nextX++
-		}
-
+		r.printLine(targetScreen, victoryMessage, 0, 0)
 		r.printScoreMessage(targetScreen, session, 0, 2)
+		r.printLine(targetScreen, restartMessage, 0, 4)
 	case gameOver:
 		targetScreen.Clear()
-		nextX := 0
-		for _, char := range gameOverMessage {
-			targetScreen.SetContent(nextX, 0, char, nil, tcell.StyleDefault)
-			nextX++
-		}
-
+		r.printLine(targetScreen, victoryMessage, 0, 0)
 		r.printScoreMessage(targetScreen, session, 0, 2)
+		r.printLine(targetScreen, restartMessage, 0, 4)
 	}
 	targetScreen.Show()
 }
 
 func (r *renderer) printScoreMessage(targetScreen tcell.Screen, session *sessionState, x, y int) {
-	nextX := x
 	scoreMessage := fmt.Sprintf("Your score is %d out of possible %d. Amonut of invalid key presses: %d.",
 		session.score, len(session.gameBoard)*scorePerGuess, session.invalidKeyPresses)
-	for _, char := range scoreMessage {
-		targetScreen.SetContent(nextX, 2, char, nil, tcell.StyleDefault)
+	r.printLine(targetScreen, scoreMessage, x, y)
+}
+
+func (r *renderer) printLine(targetScreen tcell.Screen, message string, x, y int) {
+	nextX := x
+	for _, char := range message {
+		targetScreen.SetContent(nextX, y, char, nil, tcell.StyleDefault)
 		nextX++
 	}
 }
