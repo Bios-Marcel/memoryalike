@@ -2,8 +2,6 @@ package main
 
 import (
 	"os"
-	"sync"
-	"time"
 
 	"github.com/gdamore/tcell"
 )
@@ -31,37 +29,43 @@ func main() {
 	defer screen.Fini()
 
 	width, height := screen.Size()
-	currentSessionState := newSessionState(width, height, difficulty)
+	renderNotificationChannel := make(chan bool)
+	currentSessionState := newSessionState(renderNotificationChannel, width, height, difficulty)
 	renderer := newRenderer()
 
-	//We use a mutex in order to avoid that we apply game logic while
-	//key-pressed are being added to buffer and vice versa
-	keyEventMutex := &sync.Mutex{}
-	var keyEvents []*tcell.EventKey
 	go func() {
 		for {
 			switch event := screen.PollEvent().(type) {
 			case *tcell.EventKey:
-				keyEventMutex.Lock()
 				if event.Key() == tcell.KeyCtrlC {
 					screen.Fini()
 					os.Exit(0)
 				} else if event.Key() == tcell.KeyEscape {
 					//SURRENDER!
+					currentSessionState.mutex.Lock()
 					currentSessionState.currentGameState = gameOver
+					currentSessionState.mutex.Unlock()
+					renderNotificationChannel <- true
 				} else if event.Key() == tcell.KeyCtrlR {
 					//RESTART!
-					//Make sure there's no invalid key events in the
-					//queue to avoid faulty point loss.
-					keyEvents = keyEvents[:0]
-					//Remove previous game over message and such.
+					//Remove previous game over message and such and create
+					//a fresh state, as we needn't save any information for
+					//the next session.
+					oldSession := currentSessionState
+					oldSession.mutex.Lock()
 					screen.Clear()
-					currentSessionState = newSessionState(width, height, difficulty)
+					currentSessionState = newSessionState(renderNotificationChannel, width, height, difficulty)
+					oldSession.mutex.Unlock()
 				} else if event.Key() == tcell.KeyRune {
-					keyEvents = append(keyEvents, event)
+					currentSessionState.mutex.Lock()
+					currentSessionState.applyKeyEvent(event)
+					currentSessionState.mutex.Unlock()
 				}
-				keyEventMutex.Unlock()
 			case *tcell.EventResize:
+				currentSessionState.mutex.Lock()
+				screen.Clear()
+				currentSessionState.mutex.Unlock()
+				renderNotificationChannel <- true
 				//TODO Handle resize; Validate session;
 			default:
 				//Unsupported or irrelevant event
@@ -69,33 +73,17 @@ func main() {
 		}
 	}()
 
-	//Gameloop; We always draw and then check for buffered key-inputs.
-	//We do the buffering in order to be able to constantly listen for
-	//new keysstrokes. This should avoid lag and such.
-
-	//One frame each 1/60 of a second. E.g. we want 60 FPS.
-	//TODO Is there a better and more modern approach for this?
-	gameLoopTicker := time.NewTicker(1 * time.Second / 60)
+	//Gameloop; We draw whenever there's a frame-change. This means we
+	//don't have any specific frame-rates and it could technically happen
+	//that we don't draw for a while. The first frame is drawn without
+	//waiting for a change, so that the screen doesn't stay empty.
 
 	for {
-		<-gameLoopTicker.C
-
 		//We start lock before draw in order to avoid drawing crap.
 		currentSessionState.mutex.Lock()
-
 		renderer.draw(screen, currentSessionState)
-
-		if currentSessionState.currentGameState == ongoing {
-			keyEventMutex.Lock()
-			currentSessionState.applyKeyEvents(keyEvents)
-			//Clearing, in order to prevent, that the user can just hit all keys
-			//beforehand and wait in order to win.
-			keyEvents = keyEvents[:0]
-			keyEventMutex.Unlock()
-
-			currentSessionState.updateGameState()
-		}
-
 		currentSessionState.mutex.Unlock()
+
+		<-renderNotificationChannel
 	}
 }

@@ -16,7 +16,8 @@ const scorePerGuess = 5
 // this state should make sure that the state is locked using the internal
 // mutex.
 type sessionState struct {
-	mutex *sync.Mutex
+	mutex                     *sync.Mutex
+	renderNotificationChannel chan bool
 
 	currentGameState gameState
 	score            int
@@ -33,7 +34,9 @@ type sessionState struct {
 
 // newSessionState produces a ready-to-use session state. The ticker that
 // hides cell contents is started on construction.
-func newSessionState(width, height, difficulty int) *sessionState {
+func newSessionState(renderNotificationChannel chan bool,
+	width, height, difficulty int) *sessionState {
+
 	var cellsHorizontal int
 	var cellsVertical int
 	var hideTimes time.Duration
@@ -100,13 +103,17 @@ func newSessionState(width, height, difficulty int) *sessionState {
 	})
 
 	newSessionState := &sessionState{
-		mutex:            &sync.Mutex{},
-		indicesToHide:    indicesToHide,
-		runePositions:    runePositions,
-		gameBoard:        gameBoard,
+		mutex:                     &sync.Mutex{},
+		renderNotificationChannel: renderNotificationChannel,
+
 		currentGameState: ongoing,
-		cellsHorizontal:  cellsHorizontal,
-		cellsVertical:    cellsVertical,
+
+		gameBoard:     gameBoard,
+		indicesToHide: indicesToHide,
+		runePositions: runePositions,
+
+		cellsHorizontal: cellsHorizontal,
+		cellsVertical:   cellsVertical,
 	}
 
 	//This hides characters according to the timeframes decided
@@ -116,18 +123,20 @@ func newSessionState(width, height, difficulty int) *sessionState {
 		for {
 			<-characterHideTicker.C
 
+			if len(indicesToHide) == 0 || newSessionState.currentGameState != ongoing {
+				characterHideTicker.Stop()
+				break
+			}
+
 			newSessionState.mutex.Lock()
 
 			index := len(indicesToHide) - 1
 			gameBoard[indicesToHide[index]] = fullBlock
 			indicesToHide = indicesToHide[:len(indicesToHide)-1]
+			newSessionState.updateGameState()
 
 			newSessionState.mutex.Unlock()
 
-			if len(indicesToHide) == 0 {
-				characterHideTicker.Stop()
-				break
-			}
 		}
 	}()
 
@@ -138,26 +147,34 @@ func newSessionState(width, height, difficulty int) *sessionState {
 // sessionState accordingly. Meaning that if a match between a hidden
 // cell, it's underlying character and the input rune is found, the player
 // gets a point.
-func (s *sessionState) applyKeyEvents(keyEvents []*tcell.EventKey) {
-	for _, keyEvent := range keyEvents {
-		//We assume that we only have KeyRune events here, as they were
-		//already pre-checked during the polling.
-		runeIndex := s.runePositions[keyEvent.Rune()]
-
-		//Correct match, therefore replace fullBlock with checkmark to
-		//mark cell as "correctly guessed".
-		if s.gameBoard[runeIndex] == fullBlock {
-			s.gameBoard[runeIndex] = checkMark
-		} else {
-			s.invalidKeyPresses++
-		}
+func (s *sessionState) applyKeyEvent(keyEvent *tcell.EventKey) {
+	//Game is already over. All further checks are unnecessary.
+	if s.currentGameState != ongoing {
+		return
 	}
 
+	//We assume that we only have KeyRune events here, as they were
+	//already pre-checked during the polling.
+	runeIndex := s.runePositions[keyEvent.Rune()]
+
+	//Correct match, therefore replace fullBlock with checkmark to
+	//mark cell as "correctly guessed".
+	if s.gameBoard[runeIndex] == fullBlock {
+		s.gameBoard[runeIndex] = checkMark
+	} else {
+		s.invalidKeyPresses++
+	}
+	s.updateGameState()
 }
 
 // updateGameState determines whether the game is over and what the players
 // score is.
 func (s *sessionState) updateGameState() {
+	//Game is already over. All further checks are unnecessary.
+	if s.currentGameState != ongoing {
+		return
+	}
+
 	checkMarkCount := 0
 	fullBlockCount := 0
 	leftOverChars := 0
@@ -189,6 +206,8 @@ func (s *sessionState) updateGameState() {
 			s.currentGameState = victory
 		}
 	}
+
+	s.renderNotificationChannel <- true
 }
 
 // getCharacterSet creates a unique set of characters to be used for the
