@@ -6,11 +6,12 @@ like memory.
 
 ## How to use it
 
-It's not done yet, so it's basically useless.
+It's not done yet, so it's the bare minimum required for playing.
 
 You need to download Golang 1.14 or later and either create an executable
 with `go build .` or run it directly via `go run .`.
 
 ## What's up with the name
 
-That's as far as my imagination goes.
+That's as far as my imagination goes. If you have suggestions for a better
+name, feel free to hit me up.
