@@ -71,7 +71,7 @@ func newSessionState(width, height, difficulty int) *sessionState {
 	case 3:
 		cellsHorizontal = 4
 		cellsVertical = 4
-		hideTimes = 1750 * time.Millisecond
+		hideTimes = 1250 * time.Millisecond
 		useDigits = true
 		useLowercaseChars = true
 		useUppercaseChars = true
