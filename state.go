@@ -207,7 +207,10 @@ func (s *sessionState) updateGameState() {
 		}
 	}
 
-	s.renderNotificationChannel <- true
+	// In order toa void dead-locking the caller.
+	go func() {
+		s.renderNotificationChannel <- true
+	}()
 }
 
 // getCharacterSet creates a unique set of characters to be used for the

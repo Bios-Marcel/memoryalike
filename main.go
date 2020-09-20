@@ -55,7 +55,11 @@ func main() {
 					oldSession.mutex.Lock()
 					screen.Clear()
 					currentSessionState = newSessionState(renderNotificationChannel, width, height, difficulty)
+					currentSessionState.mutex.Lock()
 					oldSession.mutex.Unlock()
+					currentSessionState.mutex.Unlock()
+					renderNotificationChannel <- true
+
 				} else if event.Key() == tcell.KeyRune {
 					currentSessionState.mutex.Lock()
 					currentSessionState.applyKeyEvent(event)
