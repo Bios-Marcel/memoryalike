@@ -3,7 +3,6 @@ package main
 import (
 	"os"
 	"sync"
-	"time"
 
 	"github.com/gdamore/tcell"
 )
@@ -51,12 +50,22 @@ func main() {
 					currentSessionState.currentGameState = gameOver
 				} else if event.Key() == tcell.KeyCtrlR {
 					//RESTART!
+
+					//We lock everything in order to avoid any clashing expectations.
+					keyEventMutex.Lock()
+					oldSession := currentSessionState
+					oldSession.mutex.Lock()
+
 					//Make sure there's no invalid key events in the
 					//queue to avoid faulty point loss.
 					keyEvents = keyEvents[:0]
 					//Remove previous game over message and such.
 					screen.Clear()
 					currentSessionState = newSessionState(width, height, difficulty)
+
+					//Unlock old session to resume execution in gameloop.
+					oldSession.mutex.Unlock()
+					keyEventMutex.Unlock()
 				} else if event.Key() == tcell.KeyRune {
 					keyEvents = append(keyEvents, event)
 				}
@@ -73,13 +82,7 @@ func main() {
 	//We do the buffering in order to be able to constantly listen for
 	//new keysstrokes. This should avoid lag and such.
 
-	//One frame each 1/60 of a second. E.g. we want 60 FPS.
-	//TODO Is there a better and more modern approach for this?
-	gameLoopTicker := time.NewTicker(1 * time.Second / 60)
-
 	for {
-		<-gameLoopTicker.C
-
 		//We start lock before draw in order to avoid drawing crap.
 		currentSessionState.mutex.Lock()
 
