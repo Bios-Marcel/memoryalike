@@ -2,6 +2,11 @@ package main
 
 import "github.com/gdamore/tcell"
 
+const (
+	gameOverMessage = "GAME OVER"
+	victoryMessage  = "Congratulations! You have won!"
+)
+
 // renderer represents a utility object to present a sessionState on a
 // terminal screen.
 type renderer struct {
@@ -33,15 +38,25 @@ func (r *renderer) draw(targetScreen tcell.Screen, session *sessionState) {
 			nextX := width/2 - boardWidth
 			for x := 0; x < session.cellsHorizontal; x++ {
 				cellRune := session.gameBoard[x+(session.cellsHorizontal*y)]
-				targetScreen.SetCell(nextX, nextY, tcell.StyleDefault, cellRune)
+				targetScreen.SetContent(nextX, nextY, cellRune, nil, tcell.StyleDefault)
 				nextX += r.horizontalSpacing + 1
 			}
 			nextY += r.verticalSpacing + 1
 		}
 	case victory:
 		targetScreen.Clear()
+		nextX := 0
+		for _, char := range victoryMessage {
+			targetScreen.SetContent(nextX, 0, char, nil, tcell.StyleDefault)
+			nextX++
+		}
 	case gameOver:
 		targetScreen.Clear()
+		nextX := 0
+		for _, char := range gameOverMessage {
+			targetScreen.SetContent(nextX, 0, char, nil, tcell.StyleDefault)
+			nextX++
+		}
 	}
 	targetScreen.Show()
 }
