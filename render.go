@@ -41,8 +41,6 @@ func newRenderer() *renderer {
 // difficulty. Selected menu entries are rendered with the reverse attribute
 // activated.
 func (r *renderer) drawMenu(targetScreen tcell.Screen, sourceMenuState *menuState) {
-	//FIXME Consider whether we should really clear here.
-	//This might cause flickering in Windows terminal. Gotta test this.
 	targetScreen.Clear()
 
 	instructionStyle := tcell.StyleDefault.Bold(true)
