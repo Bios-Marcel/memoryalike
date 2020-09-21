@@ -15,11 +15,6 @@ While achieving a victory might not be easy, you can still get a good loss.
 
 You can give up on <kbd>ESC</kbd> and restart on <kbd>Ctrl</kbd> + <kbd>R</kbd>.
 
-## Difficulty
-
-The default difficulty is `0`, which is the easiest. It ranges from `0` to `3`
-and you can change it via the `difficulty` parameter.
-
 ## How to use it
 
 It's not fully done yet, so it's the bare minimum required for playing.
@@ -31,3 +26,7 @@ with `go build .` or run it directly via `go run .`.
 
 That's as far as my imagination goes. If you have suggestions for a better
 name, feel free to hit me up.
+
+## Known issues
+
+* Resizing isn't really handled yet

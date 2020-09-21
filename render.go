@@ -10,6 +10,12 @@ const (
 	gameOverMessage = "GAME OVER"
 	victoryMessage  = "Congratulations! You have won!"
 	restartMessage  = "Hit 'Ctrl R' to restart the game."
+
+	chooseDifficultyText  = "Choose difficulty"
+	easyDifficultyText    = "easy"
+	normalDifficultyText  = "normal"
+	hardDifficultyText    = "hard"
+	extremeDifficultyText = "extreme"
 )
 
 // renderer represents a utility object to present a sessionState on a
@@ -20,7 +26,10 @@ type renderer struct {
 }
 
 // newRenderer creates a new reusable renderer. It can be used for any
-// sessionState and any screen. The renderer is stateless.
+// sessionState and any screen. It is also able to draw the game menu.
+// The renderer itself is stateless, which is why it can be used for
+// multiple sessions and screens. Technically, you could draw on multiple
+// screens at once.
 func newRenderer() *renderer {
 	return &renderer{
 		horizontalSpacing: 2,
@@ -28,8 +37,50 @@ func newRenderer() *renderer {
 	}
 }
 
-// draw fills the targetScreen with data from the passed sessionState.
-func (r *renderer) draw(targetScreen tcell.Screen, session *sessionState) {
+// drawMenu draws the main menu of the game. It allows for selecting the
+// difficulty. Selected menu entries are rendered with the reverse attribute
+// activated.
+func (r *renderer) drawMenu(targetScreen tcell.Screen, sourceMenuState *menuState) {
+	//FIXME Consider whether we should really clear here.
+	//This might cause flickering in Windows terminal. Gotta test this.
+	targetScreen.Clear()
+
+	instructionStyle := tcell.StyleDefault.Bold(true)
+	unselectedStyle := tcell.StyleDefault
+	selectedStyle := tcell.StyleDefault.Reverse(true)
+
+	determineStyle := func(difficulty int) tcell.Style {
+		if sourceMenuState.selectedDifficulty == difficulty {
+			return selectedStyle
+		}
+
+		return unselectedStyle
+	}
+
+	screenWidth, _ := targetScreen.Size()
+	r.printStyledLine(targetScreen, chooseDifficultyText, instructionStyle,
+		getHorizontalCenterForText(screenWidth, chooseDifficultyText), 2)
+	r.printStyledLine(targetScreen, easyDifficultyText, determineStyle(0),
+		getHorizontalCenterForText(screenWidth, easyDifficultyText), 4)
+	r.printStyledLine(targetScreen, normalDifficultyText, determineStyle(1),
+		getHorizontalCenterForText(screenWidth, normalDifficultyText), 6)
+	r.printStyledLine(targetScreen, hardDifficultyText, determineStyle(2),
+		getHorizontalCenterForText(screenWidth, hardDifficultyText), 8)
+	r.printStyledLine(targetScreen, extremeDifficultyText, determineStyle(3),
+		getHorizontalCenterForText(screenWidth, extremeDifficultyText), 10)
+
+	targetScreen.Show()
+}
+
+// getHorizontalCenterForText returns the x-coordinate at which teh caller must
+// start drawing in order to horizontally center given text. Note that this
+// function doesn't take rune-width into count, as it is currently irrelevant.
+func getHorizontalCenterForText(screenWidth int, text string) int {
+	return screenWidth/2 - len(text)/2
+}
+
+// drawGameBoard fills the targetScreen with data from the passed sessionState.
+func (r *renderer) drawGameBoard(targetScreen tcell.Screen, session *sessionState) {
 	boardWidth := (session.cellsHorizontal / 2 * (r.horizontalSpacing + 1))
 	boardHeight := (session.cellsVertical / 2 * (r.verticalSpacing + 1))
 
@@ -67,10 +118,18 @@ func (r *renderer) createScoreMessage(session *sessionState) string {
 		session.score, len(session.gameBoard)*scorePerGuess, session.invalidKeyPresses)
 }
 
+// printLine draws the given text at the desired position. The text will be
+// drawn using the default style (tcell.StyleDefault).
 func (r *renderer) printLine(targetScreen tcell.Screen, message string, x, y int) {
+	r.printStyledLine(targetScreen, message, tcell.StyleDefault, x, y)
+}
+
+// printStyledLine is the same as printLine, but you can override the default
+// text style.
+func (r *renderer) printStyledLine(targetScreen tcell.Screen, message string, style tcell.Style, x, y int) {
 	nextX := x
 	for _, char := range message {
-		targetScreen.SetContent(nextX, y, char, nil, tcell.StyleDefault)
+		targetScreen.SetContent(nextX, y, char, nil, style)
 		nextX++
 	}
 }

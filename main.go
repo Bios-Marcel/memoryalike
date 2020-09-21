@@ -19,6 +19,8 @@ const (
 	victory
 )
 
+var currentMenuState = &menuState{}
+
 func main() {
 	screen, screenCreationError := createScreen()
 	if screenCreationError != nil {
@@ -28,10 +30,47 @@ func main() {
 	//Cleans up the terminal buffer and returns it to the shell.
 	defer screen.Fini()
 
-	width, height := screen.Size()
-	renderNotificationChannel := make(chan bool)
-	currentSessionState := newSessionState(renderNotificationChannel, width, height, difficulty)
+	//renderer used for drawing the board and the menu.
 	renderer := newRenderer()
+
+	//Draw menu, in order to allow difficulty selection.
+	width, height := screen.Size()
+
+MENU_KEY_LOOP:
+	for {
+		//We draw the menu initially and then once after any event.
+		renderer.drawMenu(screen, currentMenuState)
+
+		switch event := screen.PollEvent().(type) {
+		case *tcell.EventKey:
+			if event.Key() == tcell.KeyDown {
+				if currentMenuState.selectedDifficulty >= 3 {
+					currentMenuState.selectedDifficulty = 0
+				} else {
+					currentMenuState.selectedDifficulty++
+				}
+			} else if event.Key() == tcell.KeyUp {
+				if currentMenuState.selectedDifficulty <= 0 {
+					currentMenuState.selectedDifficulty = 3
+				} else {
+					currentMenuState.selectedDifficulty--
+				}
+			} else if event.Key() == tcell.KeyEnter {
+				//We clear in order to get rid of the menu for sure.
+				screen.Clear()
+				break MENU_KEY_LOOP
+				//Implicitly proceed.
+			} else if event.Key() == tcell.KeyCtrlC {
+				screen.Fini()
+				os.Exit(0)
+			}
+		default:
+			//Unsupported or irrelevant event
+		}
+	}
+
+	renderNotificationChannel := make(chan bool)
+	currentSessionState := newSessionState(renderNotificationChannel, width, height, currentMenuState.selectedDifficulty)
 
 	go func() {
 		for {
@@ -54,7 +93,7 @@ func main() {
 					oldSession := currentSessionState
 					oldSession.mutex.Lock()
 					screen.Clear()
-					currentSessionState = newSessionState(renderNotificationChannel, width, height, difficulty)
+					currentSessionState = newSessionState(renderNotificationChannel, width, height, currentMenuState.selectedDifficulty)
 					currentSessionState.mutex.Lock()
 					oldSession.mutex.Unlock()
 					currentSessionState.mutex.Unlock()
@@ -85,7 +124,7 @@ func main() {
 	for {
 		//We start lock before draw in order to avoid drawing crap.
 		currentSessionState.mutex.Lock()
-		renderer.draw(screen, currentSessionState)
+		renderer.drawGameBoard(screen, currentSessionState)
 		currentSessionState.mutex.Unlock()
 
 		<-renderNotificationChannel
