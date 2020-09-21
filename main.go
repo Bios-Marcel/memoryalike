@@ -42,6 +42,7 @@ func main() {
 	width, height := screen.Size()
 	currentSessionState := newSessionState(renderNotificationChannel, width, height, currentMenuState.selectedDifficulty)
 
+	//Listen for key input on the gameboard.
 	go func() {
 		for {
 			switch event := screen.PollEvent().(type) {

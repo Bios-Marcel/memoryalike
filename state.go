@@ -207,7 +207,7 @@ func (s *sessionState) updateGameState() {
 		}
 	}
 
-	// In order toa void dead-locking the caller.
+	// In order to avoid dead-locking the caller.
 	go func() {
 		s.renderNotificationChannel <- true
 	}()

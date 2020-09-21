@@ -84,19 +84,21 @@ func (r *renderer) drawGameBoard(targetScreen tcell.Screen, session *sessionStat
 
 	width, height := targetScreen.Size()
 
-	switch session.currentGameState {
-	case ongoing:
-		//Draw gameBoard to screen. This block contains no game-logic.
-		nextY := height/2 - boardHeight
-		for y := 0; y < session.cellsVertical; y++ {
-			nextX := width/2 - boardWidth
-			for x := 0; x < session.cellsHorizontal; x++ {
-				cellRune := session.gameBoard[x+(session.cellsHorizontal*y)]
-				targetScreen.SetContent(nextX, nextY, cellRune, nil, tcell.StyleDefault)
-				nextX += r.horizontalSpacing + 1
-			}
-			nextY += r.verticalSpacing + 1
+	//Draw gameBoard to screen. This block contains no game-logic.
+	//We draw this regardless of the game state, since the player
+	//wouldn't be able to see the effect of their last move otherwise.
+	nextY := height/2 - boardHeight
+	for y := 0; y < session.cellsVertical; y++ {
+		nextX := width/2 - boardWidth
+		for x := 0; x < session.cellsHorizontal; x++ {
+			cellRune := session.gameBoard[x+(session.cellsHorizontal*y)]
+			targetScreen.SetContent(nextX, nextY, cellRune, nil, tcell.StyleDefault)
+			nextX += r.horizontalSpacing + 1
 		}
+		nextY += r.verticalSpacing + 1
+	}
+
+	switch session.currentGameState {
 	case victory:
 		r.printLine(targetScreen, victoryMessage, width/2-len(victoryMessage)/2, 2)
 		scoreMessage := r.createScoreMessage(session)
