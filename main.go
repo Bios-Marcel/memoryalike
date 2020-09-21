@@ -43,13 +43,13 @@ MENU_KEY_LOOP:
 
 		switch event := screen.PollEvent().(type) {
 		case *tcell.EventKey:
-			if event.Key() == tcell.KeyDown {
+			if event.Key() == tcell.KeyDown || event.Rune() == 's' || event.Rune() == 'k' {
 				if currentMenuState.selectedDifficulty >= 3 {
 					currentMenuState.selectedDifficulty = 0
 				} else {
 					currentMenuState.selectedDifficulty++
 				}
-			} else if event.Key() == tcell.KeyUp {
+			} else if event.Key() == tcell.KeyUp || event.Rune() == 'w' || event.Rune() == 'j' {
 				if currentMenuState.selectedDifficulty <= 0 {
 					currentMenuState.selectedDifficulty = 3
 				} else {
