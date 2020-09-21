@@ -19,6 +19,8 @@ const (
 	victory
 )
 
+// currentMenuState is global in order to remember the menu state between
+// sessions. It's on purpose, not by accident.
 var currentMenuState = &menuState{}
 
 func main() {
@@ -33,43 +35,11 @@ func main() {
 	//renderer used for drawing the board and the menu.
 	renderer := newRenderer()
 
-	//Draw menu, in order to allow difficulty selection.
-	width, height := screen.Size()
-
-MENU_KEY_LOOP:
-	for {
-		//We draw the menu initially and then once after any event.
-		renderer.drawMenu(screen, currentMenuState)
-
-		switch event := screen.PollEvent().(type) {
-		case *tcell.EventKey:
-			if event.Key() == tcell.KeyDown || event.Rune() == 's' || event.Rune() == 'k' {
-				if currentMenuState.selectedDifficulty >= 3 {
-					currentMenuState.selectedDifficulty = 0
-				} else {
-					currentMenuState.selectedDifficulty++
-				}
-			} else if event.Key() == tcell.KeyUp || event.Rune() == 'w' || event.Rune() == 'j' {
-				if currentMenuState.selectedDifficulty <= 0 {
-					currentMenuState.selectedDifficulty = 3
-				} else {
-					currentMenuState.selectedDifficulty--
-				}
-			} else if event.Key() == tcell.KeyEnter {
-				//We clear in order to get rid of the menu for sure.
-				screen.Clear()
-				break MENU_KEY_LOOP
-				//Implicitly proceed.
-			} else if event.Key() == tcell.KeyCtrlC {
-				screen.Fini()
-				os.Exit(0)
-			}
-		default:
-			//Unsupported or irrelevant event
-		}
-	}
+	//blocks till it's closed.
+	openMenu(screen, renderer)
 
 	renderNotificationChannel := make(chan bool)
+	width, height := screen.Size()
 	currentSessionState := newSessionState(renderNotificationChannel, width, height, currentMenuState.selectedDifficulty)
 
 	go func() {
@@ -81,9 +51,21 @@ MENU_KEY_LOOP:
 					os.Exit(0)
 				} else if event.Key() == tcell.KeyEscape {
 					//SURRENDER!
-					currentSessionState.mutex.Lock()
-					currentSessionState.currentGameState = gameOver
-					currentSessionState.mutex.Unlock()
+					oldSession := currentSessionState
+					oldSession.mutex.Lock()
+
+					//When hitting ESC twice, e.g. when already in the
+					//end-screen, we want to go to the menu instead.
+					if oldSession.currentGameState != ongoing {
+						openMenu(screen, renderer)
+						//We have to reset the state, as it's still in the
+						//"game over" state.
+						currentSessionState = newSessionState(renderNotificationChannel,
+							width, height, currentMenuState.selectedDifficulty)
+					} else {
+						oldSession.currentGameState = gameOver
+					}
+					oldSession.mutex.Unlock()
 					renderNotificationChannel <- true
 				} else if event.Key() == tcell.KeyCtrlR {
 					//RESTART!
@@ -93,7 +75,8 @@ MENU_KEY_LOOP:
 					oldSession := currentSessionState
 					oldSession.mutex.Lock()
 					screen.Clear()
-					currentSessionState = newSessionState(renderNotificationChannel, width, height, currentMenuState.selectedDifficulty)
+					currentSessionState = newSessionState(renderNotificationChannel,
+						width, height, currentMenuState.selectedDifficulty)
 					currentSessionState.mutex.Lock()
 					oldSession.mutex.Unlock()
 					currentSessionState.mutex.Unlock()
@@ -128,5 +111,42 @@ MENU_KEY_LOOP:
 		currentSessionState.mutex.Unlock()
 
 		<-renderNotificationChannel
+	}
+}
+
+// openMenu draws the game menu and listens for keyboard input.
+// This method blocks until a difficulty has been selected.
+func openMenu(targetScreen tcell.Screen, renderer *renderer) {
+MENU_KEY_LOOP:
+	for {
+		//We draw the menu initially and then once after any event.
+		renderer.drawMenu(targetScreen, currentMenuState)
+
+		switch event := targetScreen.PollEvent().(type) {
+		case *tcell.EventKey:
+			if event.Key() == tcell.KeyDown || event.Rune() == 's' || event.Rune() == 'k' {
+				if currentMenuState.selectedDifficulty >= 3 {
+					currentMenuState.selectedDifficulty = 0
+				} else {
+					currentMenuState.selectedDifficulty++
+				}
+			} else if event.Key() == tcell.KeyUp || event.Rune() == 'w' || event.Rune() == 'j' {
+				if currentMenuState.selectedDifficulty <= 0 {
+					currentMenuState.selectedDifficulty = 3
+				} else {
+					currentMenuState.selectedDifficulty--
+				}
+			} else if event.Key() == tcell.KeyEnter {
+				//We clear in order to get rid of the menu for sure.
+				targetScreen.Clear()
+				break MENU_KEY_LOOP
+				//Implicitly proceed.
+			} else if event.Key() == tcell.KeyCtrlC {
+				targetScreen.Fini()
+				os.Exit(0)
+			}
+		default:
+			//Unsupported or irrelevant event
+		}
 	}
 }

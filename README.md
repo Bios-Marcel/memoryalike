@@ -15,6 +15,9 @@ While achieving a victory might not be easy, you can still get a good loss.
 
 You can give up on <kbd>ESC</kbd> and restart on <kbd>Ctrl</kbd> + <kbd>R</kbd>.
 
+If you hit <kbd>ESC</kbd> again while still in the "Game Over" / "Victory"
+screen, you'll be taken to the main menu.
+
 ## How to use it
 
 It's not fully done yet, so it's the bare minimum required for playing.
