@@ -4,6 +4,8 @@ Just a tiny terminal game where you have to remember the characters presented
 to you and hit the respective key when they are hidden by a box. It's kinda
 like memory.
 
+![preview](memoryalike.gif)
+
 ## Rules
 
 The rules are quite simply. Your goal is to guess all characters correctly.
