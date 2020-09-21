@@ -4,9 +4,25 @@ Just a tiny terminal game where you have to remember the characters presented
 to you and hit the respective key when they are hidden by a box. It's kinda
 like memory.
 
+## Rules
+
+The rules are quite simply. Your goal is to guess all characters correctly.
+If you can't do that, you don't win. If 40% of the board is hidden, you lose.
+So speed does matter. Every incorrect guess will give you minus points.
+While achieving a victory might not be easy, you can still get a good loss.
+
+## Controls
+
+You can give up on <kbd>ESC</kbd> and restart on <kbd>Ctrl</kbd> + <kbd>R</kbd>.
+
+## Difficulty
+
+The default difficulty is `0`, which is the easiest. It ranges from `0` to `3`
+and you can change it via the `difficulty` parameter.
+
 ## How to use it
 
-It's not done yet, so it's the bare minimum required for playing.
+It's not fully done yet, so it's the bare minimum required for playing.
 
 You need to download Golang 1.14 or later and either create an executable
 with `go build .` or run it directly via `go run .`.
