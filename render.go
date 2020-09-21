@@ -49,23 +49,22 @@ func (r *renderer) draw(targetScreen tcell.Screen, session *sessionState) {
 			nextY += r.verticalSpacing + 1
 		}
 	case victory:
-		targetScreen.Clear()
-		r.printLine(targetScreen, victoryMessage, 0, 0)
-		r.printScoreMessage(targetScreen, session, 0, 2)
-		r.printLine(targetScreen, restartMessage, 0, 4)
+		r.printLine(targetScreen, victoryMessage, width/2-len(victoryMessage)/2, 2)
+		scoreMessage := r.createScoreMessage(session)
+		r.printLine(targetScreen, scoreMessage, width/2-len(scoreMessage)/2, 4)
+		r.printLine(targetScreen, restartMessage, width/2-len(restartMessage)/2, 6)
 	case gameOver:
-		targetScreen.Clear()
-		r.printLine(targetScreen, gameOverMessage, 0, 0)
-		r.printScoreMessage(targetScreen, session, 0, 2)
-		r.printLine(targetScreen, restartMessage, 0, 4)
+		r.printLine(targetScreen, gameOverMessage, width/2-len(gameOverMessage)/2, 2)
+		scoreMessage := r.createScoreMessage(session)
+		r.printLine(targetScreen, scoreMessage, width/2-len(scoreMessage)/2, 4)
+		r.printLine(targetScreen, restartMessage, width/2-len(restartMessage)/2, 6)
 	}
 	targetScreen.Show()
 }
 
-func (r *renderer) printScoreMessage(targetScreen tcell.Screen, session *sessionState, x, y int) {
-	scoreMessage := fmt.Sprintf("Your score is %d out of possible %d. Amonut of invalid key presses: %d.",
+func (r *renderer) createScoreMessage(session *sessionState) string {
+	return fmt.Sprintf("Your score is %d out of possible %d. Amonut of invalid key presses: %d.",
 		session.score, len(session.gameBoard)*scorePerGuess, session.invalidKeyPresses)
-	r.printLine(targetScreen, scoreMessage, x, y)
 }
 
 func (r *renderer) printLine(targetScreen tcell.Screen, message string, x, y int) {
