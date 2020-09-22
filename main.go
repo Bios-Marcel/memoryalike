@@ -21,7 +21,7 @@ const (
 
 // currentMenuState is global in order to remember the menu state between
 // sessions. It's on purpose, not by accident.
-var currentMenuState = &menuState{}
+var currentMenuState = newMenuState()
 
 func main() {
 	screen, screenCreationError := createScreen()
@@ -126,14 +126,14 @@ MENU_KEY_LOOP:
 		switch event := targetScreen.PollEvent().(type) {
 		case *tcell.EventKey:
 			if event.Key() == tcell.KeyDown || event.Rune() == 's' || event.Rune() == 'k' {
-				if currentMenuState.selectedDifficulty >= 3 {
+				if currentMenuState.selectedDifficulty >= 4 {
 					currentMenuState.selectedDifficulty = 0
 				} else {
 					currentMenuState.selectedDifficulty++
 				}
 			} else if event.Key() == tcell.KeyUp || event.Rune() == 'w' || event.Rune() == 'j' {
 				if currentMenuState.selectedDifficulty <= 0 {
-					currentMenuState.selectedDifficulty = 3
+					currentMenuState.selectedDifficulty = 4
 				} else {
 					currentMenuState.selectedDifficulty--
 				}

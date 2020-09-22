@@ -40,47 +40,57 @@ func newSessionState(renderNotificationChannel chan bool,
 	var cellsHorizontal int
 	var cellsVertical int
 	var hideTimes time.Duration
-	var useDigits bool
-	var useLowercaseChars bool
-	var useUppercaseChars bool
+	var runePools [][]rune
 
 	switch difficulty {
 	//easy
 	case 0:
 		cellsHorizontal = 3
-		cellsVertical = 3
-		//Speed is higher, as we only got digits.
+		cellsVertical = 2
 		hideTimes = 1250 * time.Millisecond
-		useDigits = true
-		useLowercaseChars = false
-		useUppercaseChars = false
-		//normal
+		runePools = [][]rune{
+			runeRange('1', '6'),
+		}
+	//normal
 	case 1:
-		cellsHorizontal = 4
+		cellsHorizontal = 3
 		cellsVertical = 3
-		hideTimes = 2500 * time.Millisecond
-		useDigits = true
-		useLowercaseChars = true
-		useUppercaseChars = false
+		hideTimes = 1250 * time.Millisecond
+		runePools = [][]rune{
+			runeRange('0', '9'),
+		}
 	//hard
 	case 2:
-		cellsHorizontal = 4
-		cellsVertical = 4
-		hideTimes = 2000 * time.Millisecond
-		useDigits = true
-		useLowercaseChars = true
-		useUppercaseChars = false
+		cellsHorizontal = 3
+		cellsVertical = 3
+		hideTimes = 1500 * time.Millisecond
+		runePools = [][]rune{
+			runeRange('a', 'z'),
+		}
 	//extreme
 	case 3:
 		cellsHorizontal = 4
-		cellsVertical = 4
-		hideTimes = 1250 * time.Millisecond
-		useDigits = true
-		useLowercaseChars = true
-		useUppercaseChars = true
+		cellsVertical = 3
+		hideTimes = 1500 * time.Millisecond
+		runePools = [][]rune{
+			runeRange('0', '9'),
+			runeRange('a', 'z'),
+		}
+	//nightmare
+	case 4:
+		cellsHorizontal = 5
+		cellsVertical = 5
+		hideTimes = 1500 * time.Millisecond
+		runePools = [][]rune{
+			runeRange('0', '9'),
+			runeRange('a', 'z'),
+		}
 	}
 
-	gameBoard, charSetError := getCharacterSet(cellsHorizontal*cellsVertical, useDigits, useLowercaseChars, useUppercaseChars)
+	//Easter egg level?!
+	//{'!', '"', '§', '$', '%', '&', '/', '(', ')', '0', 'ß'},
+
+	gameBoard, charSetError := getCharacterSet(cellsHorizontal*cellsVertical, runePools...)
 	if charSetError != nil {
 		panic(charSetError)
 	}
@@ -213,29 +223,23 @@ func (s *sessionState) updateGameState() {
 	}()
 }
 
+// runeRange creates a new rune array containing all the runes between the
+// two passed ones. Both from and to are inclusive.
+func runeRange(from, to rune) []rune {
+	runes := make([]rune, 0, to-from+1)
+	for r := from; r <= to; r++ {
+		runes = append(runes, r)
+	}
+	return runes
+}
+
 // getCharacterSet creates a unique set of characters to be used for the
-// game board. The size must be greater than 0. The character used are
-// digits (0 - 10), lowercase latin alphabet (a - z) and uppercase latin
-// alphabet (A - Z).
-func getCharacterSet(size int, digits, lowercase, uppercase bool) ([]rune, error) {
-	//These all have a cell width of one. They'll be used to fill the cells
-	//of the playing board.
+// game board. The size must be greater than 0. For sourcing the
+// characters, the rune arrays passed to this method will be used.
+func getCharacterSet(size int, pools ...[]rune) ([]rune, error) {
 	var availableCharacters []rune
-	if digits {
-		availableCharacters = append(availableCharacters,
-			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
-	}
-
-	if lowercase {
-		availableCharacters = append(availableCharacters,
-			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
-			'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z')
-	}
-
-	if uppercase {
-		availableCharacters = append(availableCharacters,
-			'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-			'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z')
+	for _, pool := range pools {
+		availableCharacters = append(availableCharacters, pool...)
 	}
 
 	if size > len(availableCharacters) {

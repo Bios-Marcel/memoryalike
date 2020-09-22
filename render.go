@@ -11,11 +11,12 @@ const (
 	victoryMessage  = "Congratulations! You have won!"
 	restartMessage  = "Hit 'Ctrl R' to restart the game."
 
-	chooseDifficultyText  = "Choose difficulty"
-	easyDifficultyText    = "easy"
-	normalDifficultyText  = "normal"
-	hardDifficultyText    = "hard"
-	extremeDifficultyText = "extreme"
+	chooseDifficultyText    = "Choose difficulty"
+	easyDifficultyText      = "easy"
+	normalDifficultyText    = "normal"
+	hardDifficultyText      = "hard"
+	extremeDifficultyText   = "extreme"
+	nightmareDifficultyText = "nightmare"
 )
 
 // renderer represents a utility object to present a sessionState on a
@@ -66,6 +67,8 @@ func (r *renderer) drawMenu(targetScreen tcell.Screen, sourceMenuState *menuStat
 		getHorizontalCenterForText(screenWidth, hardDifficultyText), 8)
 	r.printStyledLine(targetScreen, extremeDifficultyText, determineStyle(3),
 		getHorizontalCenterForText(screenWidth, extremeDifficultyText), 10)
+	r.printStyledLine(targetScreen, nightmareDifficultyText, determineStyle(4),
+		getHorizontalCenterForText(screenWidth, nightmareDifficultyText), 12)
 
 	targetScreen.Show()
 }
