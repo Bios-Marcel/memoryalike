@@ -9,7 +9,7 @@ import (
 const (
 	gameOverMessage = "GAME OVER"
 	victoryMessage  = "Congratulations! You have won!"
-	restartMessage  = "Hit 'Ctrl R' to restart the game."
+	restartMessage  = "Hit 'Ctrl R' to restart or 'ESC' to show the menu."
 
 	chooseDifficultyText    = "Choose difficulty"
 	easyDifficultyText      = "easy"
