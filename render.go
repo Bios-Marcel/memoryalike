@@ -121,7 +121,7 @@ func (r *renderer) drawGameBoard(targetScreen tcell.Screen, session *sessionStat
 }
 
 func (r *renderer) createInvalidKeyPressesMessage(session *sessionState) string {
-	return fmt.Sprintf("Amonut of invalid key presses: %d", session.invalidKeyPresses)
+	return fmt.Sprintf("Amount of invalid key presses: %d", session.invalidKeyPresses)
 }
 
 func (r *renderer) createScoreMessage(session *sessionState) string {
