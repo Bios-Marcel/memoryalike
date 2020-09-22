@@ -106,19 +106,27 @@ func (r *renderer) drawGameBoard(targetScreen tcell.Screen, session *sessionStat
 		r.printLine(targetScreen, victoryMessage, width/2-len(victoryMessage)/2, 2)
 		scoreMessage := r.createScoreMessage(session)
 		r.printLine(targetScreen, scoreMessage, width/2-len(scoreMessage)/2, 4)
-		r.printLine(targetScreen, restartMessage, width/2-len(restartMessage)/2, 6)
+		invalidKeyPressesMessage := r.createInvalidKeyPressesMessage(session)
+		r.printLine(targetScreen, invalidKeyPressesMessage, width/2-len(invalidKeyPressesMessage)/2, 5)
+		r.printLine(targetScreen, restartMessage, width/2-len(restartMessage)/2, 7)
 	case gameOver:
 		r.printLine(targetScreen, gameOverMessage, width/2-len(gameOverMessage)/2, 2)
 		scoreMessage := r.createScoreMessage(session)
 		r.printLine(targetScreen, scoreMessage, width/2-len(scoreMessage)/2, 4)
-		r.printLine(targetScreen, restartMessage, width/2-len(restartMessage)/2, 6)
+		invalidKeyPressesMessage := r.createInvalidKeyPressesMessage(session)
+		r.printLine(targetScreen, invalidKeyPressesMessage, width/2-len(invalidKeyPressesMessage)/2, 5)
+		r.printLine(targetScreen, restartMessage, width/2-len(restartMessage)/2, 7)
 	}
 	targetScreen.Show()
 }
 
+func (r *renderer) createInvalidKeyPressesMessage(session *sessionState) string {
+	return fmt.Sprintf("Amonut of invalid key presses: %d", session.invalidKeyPresses)
+}
+
 func (r *renderer) createScoreMessage(session *sessionState) string {
-	return fmt.Sprintf("Your score is %d out of possible %d. Amonut of invalid key presses: %d.",
-		session.score, len(session.gameBoard)*scorePerGuess, session.invalidKeyPresses)
+	return fmt.Sprintf("Your score is %d out of possible %d",
+		session.score, len(session.gameBoard)*scorePerGuess)
 }
 
 // printLine draws the given text at the desired position. The text will be
