@@ -130,6 +130,11 @@ func newSessionState(renderNotificationChannel chan bool,
 	//by the difficulty level.
 	characterHideTicker := time.NewTicker(hideTimes)
 	go func() {
+		//FIXME Consider whether to make this difficulty dependant.
+		//Before we start the actual countdown to hiding characters, we wait
+		//for a short while to make it a bit easier on the user.
+		<-time.NewTimer(1500 * time.Millisecond).C
+
 		for {
 			<-characterHideTicker.C
 
