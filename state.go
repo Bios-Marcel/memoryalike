@@ -41,12 +41,14 @@ func newSessionState(renderNotificationChannel chan bool,
 	var cellsVertical int
 	var hideTimes time.Duration
 	var runePools [][]rune
+	var startDelay time.Duration
 
 	switch difficulty {
 	//easy
 	case 0:
 		cellsHorizontal = 3
 		cellsVertical = 2
+		startDelay = 750 * time.Millisecond
 		hideTimes = 1250 * time.Millisecond
 		runePools = [][]rune{
 			runeRange('1', '6'),
@@ -55,6 +57,7 @@ func newSessionState(renderNotificationChannel chan bool,
 	case 1:
 		cellsHorizontal = 3
 		cellsVertical = 3
+		startDelay = 1500 * time.Millisecond
 		hideTimes = 1250 * time.Millisecond
 		runePools = [][]rune{
 			runeRange('0', '9'),
@@ -63,6 +66,7 @@ func newSessionState(renderNotificationChannel chan bool,
 	case 2:
 		cellsHorizontal = 3
 		cellsVertical = 3
+		startDelay = 1500 * time.Millisecond
 		hideTimes = 1500 * time.Millisecond
 		runePools = [][]rune{
 			runeRange('a', 'z'),
@@ -71,6 +75,7 @@ func newSessionState(renderNotificationChannel chan bool,
 	case 3:
 		cellsHorizontal = 4
 		cellsVertical = 3
+		startDelay = 1500 * time.Millisecond
 		hideTimes = 1500 * time.Millisecond
 		runePools = [][]rune{
 			runeRange('0', '9'),
@@ -80,6 +85,7 @@ func newSessionState(renderNotificationChannel chan bool,
 	case 4:
 		cellsHorizontal = 5
 		cellsVertical = 5
+		startDelay = 2500 * time.Millisecond
 		hideTimes = 1500 * time.Millisecond
 		runePools = [][]rune{
 			runeRange('0', '9'),
@@ -128,13 +134,13 @@ func newSessionState(renderNotificationChannel chan bool,
 
 	//This hides characters according to the timeframes decided
 	//by the difficulty level.
-	characterHideTicker := time.NewTicker(hideTimes)
 	go func() {
 		//FIXME Consider whether to make this difficulty dependant.
 		//Before we start the actual countdown to hiding characters, we wait
 		//for a short while to make it a bit easier on the user.
-		<-time.NewTimer(1500 * time.Millisecond).C
+		<-time.NewTimer(startDelay).C
 
+		characterHideTicker := time.NewTicker(hideTimes)
 		for {
 			<-characterHideTicker.C
 
