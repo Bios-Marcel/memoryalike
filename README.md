@@ -31,7 +31,3 @@ with `go build .` or run it directly via `go run .`.
 
 That's as far as my imagination goes. If you have suggestions for a better
 name, feel free to hit me up.
-
-## Known issues
-
-* Resizing isn't really handled yet
