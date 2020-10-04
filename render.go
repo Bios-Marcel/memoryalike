@@ -68,7 +68,7 @@ func (r *renderer) drawMenu(targetScreen tcell.Screen, sourceMenuState *menuStat
 	targetScreen.Show()
 }
 
-// getHorizontalCenterForText returns the x-coordinate at which teh caller must
+// getHorizontalCenterForText returns the x-coordinate at which the caller must
 // start drawing in order to horizontally center given text. Note that this
 // function doesn't take rune-width into count, as it is currently irrelevant.
 func getHorizontalCenterForText(screenWidth int, text string) int {
