@@ -22,8 +22,6 @@ screen, you'll be taken to the main menu.
 
 ## How to use it
 
-It's not fully done yet, so it's the bare minimum required for playing.
-
 You need to download Golang 1.14 or later and either create an executable
 with `go build .` or run it directly via `go run .`.
 
