@@ -26,8 +26,7 @@ type sessionState struct {
 	indicesToHide []int
 	runePositions map[rune]int
 
-	cellsHorizontal int
-	cellsVertical   int
+	difficulty *difficulty
 }
 
 // newSessionState produces a ready-to-use session state. The ticker that
@@ -55,7 +54,7 @@ func newSessionState(renderNotificationChannel chan bool, difficulty *difficulty
 		indicesToHide[a], indicesToHide[b] = indicesToHide[b], indicesToHide[a]
 	})
 
-	newSessionState := &sessionState{
+	return &sessionState{
 		mutex:                     &sync.Mutex{},
 		renderNotificationChannel: renderNotificationChannel,
 
@@ -65,39 +64,46 @@ func newSessionState(renderNotificationChannel chan bool, difficulty *difficulty
 		indicesToHide: indicesToHide,
 		runePositions: runePositions,
 
-		cellsHorizontal: difficulty.rowCount,
-		cellsVertical:   difficulty.columnCount,
+		difficulty: difficulty,
 	}
+}
 
-	//This hides characters according to the timeframes decided
-	//by the difficulty level.
+// startRuneHidingCoroutine starts a goroutine that hides one rune on the
+// gameboard each X milliseconds. X is defined by the hidingTime defined in
+// the referenced difficulty of the session. If no more characters can be
+// hidden or the game has ended, this coroutine exists.
+func (s *sessionState) startRuneHidingCoroutine() {
 	go func() {
-		//FIXME Consider whether to make this difficulty dependant.
-		//Before we start the actual countdown to hiding characters, we wait
-		//for a short while to make it a bit easier on the user.
-		<-time.NewTimer(difficulty.startDelay).C
+		<-time.NewTimer(s.difficulty.startDelay).C
 
-		characterHideTicker := time.NewTicker(difficulty.hideTimes)
+		characterHideTicker := time.NewTicker(s.difficulty.hideTimes)
 		for {
 			<-characterHideTicker.C
 
-			if len(indicesToHide) == 0 || newSessionState.currentGameState != ongoing {
+			if len(s.indicesToHide) == 0 || s.currentGameState != ongoing {
 				characterHideTicker.Stop()
 				break
 			}
 
-			newSessionState.mutex.Lock()
-
-			index := len(indicesToHide) - 1
-			gameBoard[indicesToHide[index]] = fullBlock
-			indicesToHide = indicesToHide[:len(indicesToHide)-1]
-			newSessionState.updateGameState()
-
-			newSessionState.mutex.Unlock()
+			s.mutex.Lock()
+			s.hideRune()
+			s.mutex.Unlock()
 		}
 	}()
+}
 
-	return newSessionState
+// hideRune hides a rune that's currently visible on the gameboard. If a rune
+// has been hidden, this method returns true, otherwise false.
+func (s *sessionState) hideRune() bool {
+	nextIndexToHide := len(s.indicesToHide) - 1
+	if nextIndexToHide != -1 {
+		s.gameBoard[s.indicesToHide[nextIndexToHide]] = fullBlock
+		s.indicesToHide = s.indicesToHide[:len(s.indicesToHide)-1]
+		s.updateGameState()
+		return true
+	}
+
+	return false
 }
 
 // applyKeyEvents checks the key-events for possible matches and updates the

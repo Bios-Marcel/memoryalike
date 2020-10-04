@@ -77,8 +77,8 @@ func getHorizontalCenterForText(screenWidth int, text string) int {
 
 // drawGameBoard fills the targetScreen with data from the passed sessionState.
 func (r *renderer) drawGameBoard(targetScreen tcell.Screen, session *sessionState) {
-	boardWidth := (session.cellsHorizontal / 2 * (r.horizontalSpacing + 1))
-	boardHeight := (session.cellsVertical / 2 * (r.verticalSpacing + 1))
+	boardWidth := (session.difficulty.rowCount / 2 * (r.horizontalSpacing + 1))
+	boardHeight := (session.difficulty.columnCount / 2 * (r.verticalSpacing + 1))
 
 	width, height := targetScreen.Size()
 
@@ -86,10 +86,10 @@ func (r *renderer) drawGameBoard(targetScreen tcell.Screen, session *sessionStat
 	//We draw this regardless of the game state, since the player
 	//wouldn't be able to see the effect of their last move otherwise.
 	nextY := height/2 - boardHeight
-	for y := 0; y < session.cellsVertical; y++ {
+	for y := 0; y < session.difficulty.columnCount; y++ {
 		nextX := width/2 - boardWidth
-		for x := 0; x < session.cellsHorizontal; x++ {
-			cellRune := session.gameBoard[x+(session.cellsHorizontal*y)]
+		for x := 0; x < session.difficulty.rowCount; x++ {
+			cellRune := session.gameBoard[x+(session.difficulty.rowCount*y)]
 			targetScreen.SetContent(nextX, nextY, cellRune, nil, tcell.StyleDefault)
 			nextX += r.horizontalSpacing + 1
 		}

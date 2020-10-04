@@ -40,6 +40,7 @@ func main() {
 
 	renderNotificationChannel := make(chan bool)
 	currentSessionState := newSessionState(renderNotificationChannel, currentMenuState.getDiffculty())
+	currentSessionState.startRuneHidingCoroutine()
 
 	//Listen for key input on the gameboard.
 	go func() {
@@ -62,6 +63,7 @@ func main() {
 						//"game over" state.
 						currentSessionState = newSessionState(renderNotificationChannel,
 							currentMenuState.getDiffculty())
+						currentSessionState.startRuneHidingCoroutine()
 					} else {
 						oldSession.currentGameState = gameOver
 					}
@@ -74,10 +76,15 @@ func main() {
 					//the next session.
 					oldSession := currentSessionState
 					oldSession.mutex.Lock()
+
+					//Make sure the state knows it's supposed to be dead.
+					oldSession.currentGameState = gameOver
 					screen.Clear()
 					currentSessionState = newSessionState(renderNotificationChannel,
 						currentMenuState.getDiffculty())
+					currentSessionState.startRuneHidingCoroutine()
 					currentSessionState.mutex.Lock()
+
 					oldSession.mutex.Unlock()
 					currentSessionState.mutex.Unlock()
 					renderNotificationChannel <- true
