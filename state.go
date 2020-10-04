@@ -34,8 +34,7 @@ type sessionState struct {
 
 // newSessionState produces a ready-to-use session state. The ticker that
 // hides cell contents is started on construction.
-func newSessionState(renderNotificationChannel chan bool,
-	width, height int, difficulty *difficulty) *sessionState {
+func newSessionState(renderNotificationChannel chan bool, difficulty *difficulty) *sessionState {
 	gameBoard, charSetError := getCharacterSet(difficulty.rowCount*difficulty.columnCount, difficulty.runePools...)
 	if charSetError != nil {
 		panic(charSetError)

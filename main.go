@@ -39,8 +39,7 @@ func main() {
 	openMenu(screen, renderer)
 
 	renderNotificationChannel := make(chan bool)
-	width, height := screen.Size()
-	currentSessionState := newSessionState(renderNotificationChannel, width, height, currentMenuState.getDiffculty())
+	currentSessionState := newSessionState(renderNotificationChannel, currentMenuState.getDiffculty())
 
 	//Listen for key input on the gameboard.
 	go func() {
@@ -62,7 +61,7 @@ func main() {
 						//We have to reset the state, as it's still in the
 						//"game over" state.
 						currentSessionState = newSessionState(renderNotificationChannel,
-							width, height, currentMenuState.getDiffculty())
+							currentMenuState.getDiffculty())
 					} else {
 						oldSession.currentGameState = gameOver
 					}
@@ -77,7 +76,7 @@ func main() {
 					oldSession.mutex.Lock()
 					screen.Clear()
 					currentSessionState = newSessionState(renderNotificationChannel,
-						width, height, currentMenuState.getDiffculty())
+						currentMenuState.getDiffculty())
 					currentSessionState.mutex.Lock()
 					oldSession.mutex.Unlock()
 					currentSessionState.mutex.Unlock()
