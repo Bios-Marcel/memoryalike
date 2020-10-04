@@ -84,7 +84,7 @@ func main() {
 
 				} else if event.Key() == tcell.KeyRune {
 					currentSessionState.mutex.Lock()
-					currentSessionState.applyKeyEvent(event)
+					currentSessionState.inputRunePress(event.Rune())
 					currentSessionState.mutex.Unlock()
 				}
 			case *tcell.EventResize:

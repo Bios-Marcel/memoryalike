@@ -6,8 +6,6 @@ import (
 	"math/rand"
 	"sync"
 	"time"
-
-	"github.com/gdamore/tcell"
 )
 
 const scorePerGuess = 5
@@ -106,7 +104,7 @@ func newSessionState(renderNotificationChannel chan bool, difficulty *difficulty
 // sessionState accordingly. Meaning that if a match between a hidden
 // cell, it's underlying character and the input rune is found, the player
 // gets a point.
-func (s *sessionState) applyKeyEvent(keyEvent *tcell.EventKey) {
+func (s *sessionState) inputRunePress(pressed rune) {
 	//Game is already over. All further checks are unnecessary.
 	if s.currentGameState != ongoing {
 		return
@@ -114,7 +112,7 @@ func (s *sessionState) applyKeyEvent(keyEvent *tcell.EventKey) {
 
 	//We assume that we only have KeyRune events here, as they were
 	//already pre-checked during the polling.
-	runeIndex := s.runePositions[keyEvent.Rune()]
+	runeIndex := s.runePositions[pressed]
 
 	//Correct match, therefore replace fullBlock with checkmark to
 	//mark cell as "correctly guessed".
