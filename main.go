@@ -40,7 +40,7 @@ func main() {
 
 	renderNotificationChannel := make(chan bool)
 	width, height := screen.Size()
-	currentSessionState := newSessionState(renderNotificationChannel, width, height, currentMenuState.selectedDifficulty)
+	currentSessionState := newSessionState(renderNotificationChannel, width, height, currentMenuState.getDiffculty())
 
 	//Listen for key input on the gameboard.
 	go func() {
@@ -62,7 +62,7 @@ func main() {
 						//We have to reset the state, as it's still in the
 						//"game over" state.
 						currentSessionState = newSessionState(renderNotificationChannel,
-							width, height, currentMenuState.selectedDifficulty)
+							width, height, currentMenuState.getDiffculty())
 					} else {
 						oldSession.currentGameState = gameOver
 					}
@@ -77,7 +77,7 @@ func main() {
 					oldSession.mutex.Lock()
 					screen.Clear()
 					currentSessionState = newSessionState(renderNotificationChannel,
-						width, height, currentMenuState.selectedDifficulty)
+						width, height, currentMenuState.getDiffculty())
 					currentSessionState.mutex.Lock()
 					oldSession.mutex.Unlock()
 					currentSessionState.mutex.Unlock()
@@ -126,14 +126,14 @@ MENU_KEY_LOOP:
 		switch event := targetScreen.PollEvent().(type) {
 		case *tcell.EventKey:
 			if event.Key() == tcell.KeyDown || event.Rune() == 's' || event.Rune() == 'k' {
-				if currentMenuState.selectedDifficulty >= 4 {
+				if currentMenuState.selectedDifficulty >= len(difficulties)-1 {
 					currentMenuState.selectedDifficulty = 0
 				} else {
 					currentMenuState.selectedDifficulty++
 				}
 			} else if event.Key() == tcell.KeyUp || event.Rune() == 'w' || event.Rune() == 'j' {
 				if currentMenuState.selectedDifficulty <= 0 {
-					currentMenuState.selectedDifficulty = 4
+					currentMenuState.selectedDifficulty = len(difficulties) - 1
 				} else {
 					currentMenuState.selectedDifficulty--
 				}

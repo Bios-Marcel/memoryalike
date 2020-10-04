@@ -11,12 +11,7 @@ const (
 	victoryMessage  = "Congratulations! You have won!"
 	restartMessage  = "Hit 'Ctrl R' to restart or 'ESC' to show the menu."
 
-	chooseDifficultyText    = "Choose difficulty"
-	easyDifficultyText      = "easy"
-	normalDifficultyText    = "normal"
-	hardDifficultyText      = "hard"
-	extremeDifficultyText   = "extreme"
-	nightmareDifficultyText = "nightmare"
+	chooseDifficultyText = "Choose difficulty"
 )
 
 // renderer represents a utility object to present a sessionState on a
@@ -57,18 +52,18 @@ func (r *renderer) drawMenu(targetScreen tcell.Screen, sourceMenuState *menuStat
 	}
 
 	screenWidth, _ := targetScreen.Size()
+
+	//Draw "Choose difficulties text"
 	r.printStyledLine(targetScreen, chooseDifficultyText, instructionStyle,
 		getHorizontalCenterForText(screenWidth, chooseDifficultyText), 2)
-	r.printStyledLine(targetScreen, easyDifficultyText, determineStyle(0),
-		getHorizontalCenterForText(screenWidth, easyDifficultyText), 4)
-	r.printStyledLine(targetScreen, normalDifficultyText, determineStyle(1),
-		getHorizontalCenterForText(screenWidth, normalDifficultyText), 6)
-	r.printStyledLine(targetScreen, hardDifficultyText, determineStyle(2),
-		getHorizontalCenterForText(screenWidth, hardDifficultyText), 8)
-	r.printStyledLine(targetScreen, extremeDifficultyText, determineStyle(3),
-		getHorizontalCenterForText(screenWidth, extremeDifficultyText), 10)
-	r.printStyledLine(targetScreen, nightmareDifficultyText, determineStyle(4),
-		getHorizontalCenterForText(screenWidth, nightmareDifficultyText), 12)
+
+	//Draw difficulties into menu.
+	nextY := 4
+	for diffIndex, diff := range difficulties {
+		r.printStyledLine(targetScreen, diff.visibleName, determineStyle(diffIndex),
+			getHorizontalCenterForText(screenWidth, diff.visibleName), nextY)
+		nextY += 2
+	}
 
 	targetScreen.Show()
 }

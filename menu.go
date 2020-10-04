@@ -10,3 +10,8 @@ func newMenuState() *menuState {
 		selectedDifficulty: 1,
 	}
 }
+
+// getDiffculty returns the diffculty chosen by the user.
+func (menuState *menuState) getDiffculty() *difficulty {
+	return difficulties[menuState.selectedDifficulty]
+}

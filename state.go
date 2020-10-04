@@ -35,68 +35,8 @@ type sessionState struct {
 // newSessionState produces a ready-to-use session state. The ticker that
 // hides cell contents is started on construction.
 func newSessionState(renderNotificationChannel chan bool,
-	width, height, difficulty int) *sessionState {
-
-	var cellsHorizontal int
-	var cellsVertical int
-	var hideTimes time.Duration
-	var runePools [][]rune
-	var startDelay time.Duration
-
-	switch difficulty {
-	//easy
-	case 0:
-		cellsHorizontal = 3
-		cellsVertical = 2
-		startDelay = 750 * time.Millisecond
-		hideTimes = 1250 * time.Millisecond
-		runePools = [][]rune{
-			runeRange('1', '6'),
-		}
-	//normal
-	case 1:
-		cellsHorizontal = 3
-		cellsVertical = 3
-		startDelay = 1500 * time.Millisecond
-		hideTimes = 1250 * time.Millisecond
-		runePools = [][]rune{
-			runeRange('0', '9'),
-		}
-	//hard
-	case 2:
-		cellsHorizontal = 3
-		cellsVertical = 3
-		startDelay = 1500 * time.Millisecond
-		hideTimes = 1500 * time.Millisecond
-		runePools = [][]rune{
-			runeRange('a', 'z'),
-		}
-	//extreme
-	case 3:
-		cellsHorizontal = 4
-		cellsVertical = 3
-		startDelay = 1500 * time.Millisecond
-		hideTimes = 1500 * time.Millisecond
-		runePools = [][]rune{
-			runeRange('0', '9'),
-			runeRange('a', 'z'),
-		}
-	//nightmare
-	case 4:
-		cellsHorizontal = 5
-		cellsVertical = 5
-		startDelay = 2500 * time.Millisecond
-		hideTimes = 1500 * time.Millisecond
-		runePools = [][]rune{
-			runeRange('0', '9'),
-			runeRange('a', 'z'),
-		}
-	}
-
-	//Easter egg level?!
-	//{'!', '"', '§', '$', '%', '&', '/', '(', ')', '0', 'ß'},
-
-	gameBoard, charSetError := getCharacterSet(cellsHorizontal*cellsVertical, runePools...)
+	width, height int, difficulty *difficulty) *sessionState {
+	gameBoard, charSetError := getCharacterSet(difficulty.rowCount*difficulty.columnCount, difficulty.runePools...)
 	if charSetError != nil {
 		panic(charSetError)
 	}
@@ -128,8 +68,8 @@ func newSessionState(renderNotificationChannel chan bool,
 		indicesToHide: indicesToHide,
 		runePositions: runePositions,
 
-		cellsHorizontal: cellsHorizontal,
-		cellsVertical:   cellsVertical,
+		cellsHorizontal: difficulty.rowCount,
+		cellsVertical:   difficulty.columnCount,
 	}
 
 	//This hides characters according to the timeframes decided
@@ -138,9 +78,9 @@ func newSessionState(renderNotificationChannel chan bool,
 		//FIXME Consider whether to make this difficulty dependant.
 		//Before we start the actual countdown to hiding characters, we wait
 		//for a short while to make it a bit easier on the user.
-		<-time.NewTimer(startDelay).C
+		<-time.NewTimer(difficulty.startDelay).C
 
-		characterHideTicker := time.NewTicker(hideTimes)
+		characterHideTicker := time.NewTicker(difficulty.hideTimes)
 		for {
 			<-characterHideTicker.C
 
@@ -157,7 +97,6 @@ func newSessionState(renderNotificationChannel chan bool,
 			newSessionState.updateGameState()
 
 			newSessionState.mutex.Unlock()
-
 		}
 	}()
 
