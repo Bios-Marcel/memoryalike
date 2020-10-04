@@ -8,10 +8,11 @@ like memory.
 
 ## Rules
 
-The rules are quite simply. Your goal is to guess all characters correctly.
-If you can't do that, you don't win. If 40% of the board is hidden, you lose.
-So speed does matter. Every incorrect guess will give you minus points.
-While achieving a victory might not be easy, you can still get a good loss.
+The rules are quite simple. Your goal is to guess all characters correctly.
+If you can't do that, you can't win. If at least 40% of the board is
+hidden, you lose. So speed does matter. Every incorrect guess will give you
+minus points. While achieving a victory might not be easy, you can still get
+a good loss.
 
 ## Controls
 
