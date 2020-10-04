@@ -49,7 +49,7 @@ func newSessionState(renderNotificationChannel chan bool,
 
 	//This decides which cells will be hidden in which order. If this stack
 	//is empty, the game is over.
-	indicesToHide := make([]int, len(gameBoard), len(gameBoard))
+	indicesToHide := make([]int, len(gameBoard))
 	for i := 0; i < len(indicesToHide); i++ {
 		indicesToHide[i] = i
 	}
