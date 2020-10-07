@@ -1,6 +1,8 @@
 package main
 
-import "testing"
+import (
+	"testing"
+)
 
 type guessType int
 
@@ -22,6 +24,17 @@ type stateIteration struct {
 // TestState tests the gamestate as a whole. E.g. simulating user interaction
 // and seeing whether the results are as expected.
 func TestState(t *testing.T) {
+	testDifficulty := &difficulty{
+		visibleName:             "easy",
+		correctGuessPoints:      5,
+		invalidKeyPressPenality: 2,
+		rowCount:                3,
+		columnCount:             2,
+		runePools: [][]rune{
+			runeRange('1', '6'),
+		},
+	}
+
 	t.Run("No input gameover due to 50% hidden fields", func(t *testing.T) {
 		iterations := []stateIteration{
 			{false, none, 0, 0, ongoing},
@@ -29,7 +42,7 @@ func TestState(t *testing.T) {
 			{true, none, 0, 0, ongoing},
 			{true, none, 0, 0, gameOver},
 		}
-		state := newSessionState(make(chan bool, 100), difficulties[0])
+		state := newSessionState(make(chan bool, 100), testDifficulty)
 		runIterations(t, iterations, state)
 	})
 
@@ -40,7 +53,7 @@ func TestState(t *testing.T) {
 			{false, nonExistantRune, -6, 3, ongoing},
 			{false, nonExistantRune, -8, 4, ongoing},
 		}
-		state := newSessionState(make(chan bool, 100), difficulties[0])
+		state := newSessionState(make(chan bool, 100), testDifficulty)
 		runIterations(t, iterations, state)
 	})
 
@@ -51,7 +64,7 @@ func TestState(t *testing.T) {
 			{false, anyShownRune, -6, 3, ongoing},
 			{false, anyShownRune, -8, 4, ongoing},
 		}
-		state := newSessionState(make(chan bool, 100), difficulties[0])
+		state := newSessionState(make(chan bool, 100), testDifficulty)
 		runIterations(t, iterations, state)
 	})
 
@@ -64,7 +77,7 @@ func TestState(t *testing.T) {
 			{true, anyhiddenRune, 25, 0, ongoing},
 			{true, anyhiddenRune, 30, 0, victory},
 		}
-		state := newSessionState(make(chan bool, 100), difficulties[0])
+		state := newSessionState(make(chan bool, 100), testDifficulty)
 		runIterations(t, iterations, state)
 	})
 
@@ -77,7 +90,7 @@ func TestState(t *testing.T) {
 			{true, anyhiddenRune, 18, 1, ongoing},
 			{true, anyhiddenRune, 23, 1, ongoing},
 		}
-		state := newSessionState(make(chan bool, 100), difficulties[0])
+		state := newSessionState(make(chan bool, 100), testDifficulty)
 		runIterations(t, iterations, state)
 	})
 
@@ -91,7 +104,7 @@ func TestState(t *testing.T) {
 			{true, anyhiddenRune, 23, 1, ongoing},
 			{false, anyhiddenRune, 28, 1, victory},
 		}
-		state := newSessionState(make(chan bool, 100), difficulties[0])
+		state := newSessionState(make(chan bool, 100), testDifficulty)
 		runIterations(t, iterations, state)
 	})
 }
