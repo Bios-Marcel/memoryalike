@@ -104,21 +104,16 @@ func runIterations(t *testing.T, iterations []stateIteration, state *sessionStat
 
 		switch iteration.input {
 		case anyhiddenRune:
-			for index, r := range state.gameBoard {
-				if r == fullBlock {
-					for r2, index2 := range state.runePositions {
-						if index == index2 {
-							state.inputRunePress(r2)
-							break
-						}
-					}
+			for _, cell := range state.gameBoard {
+				if cell.state == hidden {
+					state.inputRunePress(cell.character)
 					break
 				}
 			}
 		case anyShownRune:
-			for _, r := range state.gameBoard {
-				if r != checkMark && r != fullBlock {
-					state.inputRunePress(r)
+			for _, cell := range state.gameBoard {
+				if cell.state == shown {
+					state.inputRunePress(cell.character)
 					break
 				}
 			}

@@ -89,8 +89,18 @@ func (r *renderer) drawGameBoard(targetScreen tcell.Screen, session *sessionStat
 	for y := 0; y < session.difficulty.columnCount; y++ {
 		nextX := width/2 - boardWidth
 		for x := 0; x < session.difficulty.rowCount; x++ {
-			cellRune := session.gameBoard[x+(session.difficulty.rowCount*y)]
-			targetScreen.SetContent(nextX, nextY, cellRune, nil, tcell.StyleDefault)
+			var renderRune rune
+			boardCell := session.gameBoard[x+(session.difficulty.rowCount*y)]
+			switch boardCell.state {
+			case shown:
+				renderRune = boardCell.character
+			case hidden:
+				renderRune = fullBlock
+			case guessed:
+				renderRune = checkMark
+			}
+
+			targetScreen.SetContent(nextX, nextY, renderRune, nil, tcell.StyleDefault)
 			nextX += r.horizontalSpacing + 1
 		}
 		nextY += r.verticalSpacing + 1
@@ -121,7 +131,7 @@ func (r *renderer) createInvalidKeyPressesMessage(session *sessionState) string 
 
 func (r *renderer) createScoreMessage(session *sessionState) string {
 	return fmt.Sprintf("Your score is %d out of possible %d",
-		session.score, len(session.gameBoard)*scorePerGuess)
+		session.score, len(session.gameBoard)*session.difficulty.correctGuessPoints)
 }
 
 // printLine draws the given text at the desired position. The text will be

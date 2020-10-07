@@ -8,7 +8,19 @@ import (
 	"time"
 )
 
-const scorePerGuess = 5
+type cellState int
+
+const (
+	shown cellState = iota
+	hidden
+	guessed
+)
+
+// gameBoardCell represents a single character visible to the user.
+type gameBoardCell struct {
+	character rune
+	state     cellState
+}
 
 // sessionState represents all game state for a session. All operations on
 // this state should make sure that the state is locked using the internal
@@ -22,9 +34,8 @@ type sessionState struct {
 	//invalidKeyPresses counts the invalid keyPresses made by the player.
 	invalidKeyPresses int
 
-	gameBoard     []rune
+	gameBoard     []*gameBoardCell
 	indicesToHide []int
-	runePositions map[rune]int
 
 	difficulty *difficulty
 }
@@ -32,15 +43,13 @@ type sessionState struct {
 // newSessionState produces a ready-to-use session state. The ticker that
 // hides cell contents is started on construction.
 func newSessionState(renderNotificationChannel chan bool, difficulty *difficulty) *sessionState {
-	gameBoard, charSetError := getCharacterSet(difficulty.rowCount*difficulty.columnCount, difficulty.runePools...)
+	characterSet, charSetError := getCharacterSet(difficulty.rowCount*difficulty.columnCount, difficulty.runePools...)
 	if charSetError != nil {
 		panic(charSetError)
 	}
-
-	//Position cache to avoid performance loss due to iteration.
-	runePositions := make(map[rune]int, len(gameBoard))
-	for index, char := range gameBoard {
-		runePositions[char] = index
+	gameBoard := make([]*gameBoardCell, 0, len(characterSet))
+	for _, char := range characterSet {
+		gameBoard = append(gameBoard, &gameBoardCell{char, shown})
 	}
 
 	//This decides which cells will be hidden in which order. If this stack
@@ -62,7 +71,6 @@ func newSessionState(renderNotificationChannel chan bool, difficulty *difficulty
 
 		gameBoard:     gameBoard,
 		indicesToHide: indicesToHide,
-		runePositions: runePositions,
 
 		difficulty: difficulty,
 	}
@@ -96,7 +104,7 @@ func (s *sessionState) startRuneHidingCoroutine() {
 func (s *sessionState) hideRune() {
 	nextIndexToHide := len(s.indicesToHide) - 1
 	if nextIndexToHide != -1 {
-		s.gameBoard[s.indicesToHide[nextIndexToHide]] = fullBlock
+		s.gameBoard[s.indicesToHide[nextIndexToHide]].state = hidden
 		s.indicesToHide = s.indicesToHide[:len(s.indicesToHide)-1]
 		s.updateGameState()
 	}
@@ -112,17 +120,21 @@ func (s *sessionState) inputRunePress(pressed rune) {
 		return
 	}
 
-	//We assume that we only have KeyRune events here, as they were
-	//already pre-checked during the polling.
-	runeIndex := s.runePositions[pressed]
+	for _, cell := range s.gameBoard {
+		if cell.character == pressed {
+			if cell.state == hidden {
+				cell.state = guessed
+				s.updateGameState()
+				return
+			}
 
-	//Correct match, therefore replace fullBlock with checkmark to
-	//mark cell as "correctly guessed".
-	if s.gameBoard[runeIndex] == fullBlock {
-		s.gameBoard[runeIndex] = checkMark
-	} else {
-		s.invalidKeyPresses++
+			break
+		}
 	}
+
+	//Pressed rune wasn't hidden or wasn't present, therefore the user gets
+	//minus points
+	s.invalidKeyPresses++
 	s.updateGameState()
 }
 
@@ -134,31 +146,29 @@ func (s *sessionState) updateGameState() {
 		return
 	}
 
-	checkMarkCount := 0
-	fullBlockCount := 0
-	leftOverChars := 0
-
-	for _, char := range s.gameBoard {
-		if char == fullBlock {
-			fullBlockCount++
-		} else if char == checkMark {
-			checkMarkCount++
+	var guessedCellCount, hiddenCellCount, shownCellCount int
+	for _, cell := range s.gameBoard {
+		if cell.state == hidden {
+			hiddenCellCount++
+		} else if cell.state == guessed {
+			guessedCellCount++
 		} else {
-			leftOverChars++
+			shownCellCount++
 		}
 	}
 
-	s.score = checkMarkCount*scorePerGuess - s.invalidKeyPresses*2
+	s.score = guessedCellCount*s.difficulty.correctGuessPoints -
+		s.invalidKeyPresses*s.difficulty.invalidKeyPressPenality
 
-	//if at least 40 percent of the board is fullblocks, the player lost.
-	//In case of a normal game for example, this should mean 4 fullBlocks.
-	lengthFloat := float32(len(s.gameBoard))
-	fullBlockCountFloat := float32(fullBlockCount)
-	if fullBlockCount != 0 && fullBlockCountFloat/lengthFloat >= 0.4 {
+	//if at least 40 percent of the board is hidden, the player loses.
+	//In case of a normal game for example, this should mean 4 hidden cells.
+	if hiddenCellCount != 0 && float32(hiddenCellCount)/float32(len(s.gameBoard)) >= 0.4 {
 		s.currentGameState = gameOver
-	} else if leftOverChars == 0 && fullBlockCount == 0 {
-		//The game is only over, if there are no full blocks left and no
-		//unmasked cells left.
+	} else if shownCellCount == 0 && hiddenCellCount == 0 {
+		//The game is only over if all cells have been guessed correctly
+
+		//Even if all cells have been guessed correctly, we deem zero score
+		//as a loss, as the player probably smashed his keyboard randomly.
 		if s.score <= 0 {
 			s.currentGameState = gameOver
 		} else {
