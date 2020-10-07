@@ -92,20 +92,14 @@ func (s *sessionState) startRuneHidingCoroutine() {
 	}()
 }
 
-// hideRune hides a rune that's currently visible on the gameboard. If a rune
-// has been hidden, the rune is returned, otherwise we return 0. This return
-// value mainly exists for testability.
-func (s *sessionState) hideRune() rune {
+// hideRune hides a rune that's currently visible on the gameboard.
+func (s *sessionState) hideRune() {
 	nextIndexToHide := len(s.indicesToHide) - 1
 	if nextIndexToHide != -1 {
-		hiddenRune := s.gameBoard[s.indicesToHide[nextIndexToHide]]
 		s.gameBoard[s.indicesToHide[nextIndexToHide]] = fullBlock
 		s.indicesToHide = s.indicesToHide[:len(s.indicesToHide)-1]
 		s.updateGameState()
-		return hiddenRune
 	}
-
-	return 0
 }
 
 // applyKeyEvents checks the key-events for possible matches and updates the

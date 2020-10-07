@@ -6,8 +6,9 @@ type guessType int
 
 const (
 	none guessType = iota
-	correct
-	incorrect
+	anyhiddenRune
+	anyShownRune
+	nonExistantRune
 )
 
 type stateIteration struct {
@@ -18,6 +19,8 @@ type stateIteration struct {
 	expectedGameState         gameState
 }
 
+// TestState tests the gamestate as a whole. E.g. simulating user interaction
+// and seeing whether the results are as expected.
 func TestState(t *testing.T) {
 	t.Run("No input gameover due to 50% hidden fields", func(t *testing.T) {
 		iterations := []stateIteration{
@@ -30,12 +33,23 @@ func TestState(t *testing.T) {
 		runIterations(t, iterations, state)
 	})
 
-	t.Run("invalid niput without hidden fields", func(t *testing.T) {
+	t.Run("invalid input without hidden fields", func(t *testing.T) {
 		iterations := []stateIteration{
-			{false, incorrect, -2, 1, ongoing},
-			{false, incorrect, -4, 2, ongoing},
-			{false, incorrect, -6, 3, ongoing},
-			{false, incorrect, -8, 4, gameOver},
+			{false, nonExistantRune, -2, 1, ongoing},
+			{false, nonExistantRune, -4, 2, ongoing},
+			{false, nonExistantRune, -6, 3, ongoing},
+			{false, nonExistantRune, -8, 4, ongoing},
+		}
+		state := newSessionState(make(chan bool, 100), difficulties[0])
+		runIterations(t, iterations, state)
+	})
+
+	t.Run("valid input without hidden fields", func(t *testing.T) {
+		iterations := []stateIteration{
+			{false, anyShownRune, -2, 1, ongoing},
+			{false, anyShownRune, -4, 2, ongoing},
+			{false, anyShownRune, -6, 3, ongoing},
+			{false, anyShownRune, -8, 4, ongoing},
 		}
 		state := newSessionState(make(chan bool, 100), difficulties[0])
 		runIterations(t, iterations, state)
@@ -43,12 +57,12 @@ func TestState(t *testing.T) {
 
 	t.Run("all guesses correct", func(t *testing.T) {
 		iterations := []stateIteration{
-			{true, correct, 5, 0, ongoing},
-			{true, correct, 10, 0, ongoing},
-			{true, correct, 15, 0, ongoing},
-			{true, correct, 20, 0, ongoing},
-			{true, correct, 25, 0, ongoing},
-			{true, correct, 30, 0, victory},
+			{true, anyhiddenRune, 5, 0, ongoing},
+			{true, anyhiddenRune, 10, 0, ongoing},
+			{true, anyhiddenRune, 15, 0, ongoing},
+			{true, anyhiddenRune, 20, 0, ongoing},
+			{true, anyhiddenRune, 25, 0, ongoing},
+			{true, anyhiddenRune, 30, 0, victory},
 		}
 		state := newSessionState(make(chan bool, 100), difficulties[0])
 		runIterations(t, iterations, state)
@@ -56,12 +70,26 @@ func TestState(t *testing.T) {
 
 	t.Run("one incorrect guess no gameover", func(t *testing.T) {
 		iterations := []stateIteration{
-			{true, correct, 5, 0, ongoing},
-			{true, correct, 10, 0, ongoing},
-			{true, correct, 15, 0, ongoing},
-			{true, incorrect, 13, 1, ongoing},
-			{true, correct, 18, 1, ongoing},
-			{true, correct, 23, 1, ongoing},
+			{true, anyhiddenRune, 5, 0, ongoing},
+			{true, anyhiddenRune, 10, 0, ongoing},
+			{true, anyhiddenRune, 15, 0, ongoing},
+			{true, nonExistantRune, 13, 1, ongoing},
+			{true, anyhiddenRune, 18, 1, ongoing},
+			{true, anyhiddenRune, 23, 1, ongoing},
+		}
+		state := newSessionState(make(chan bool, 100), difficulties[0])
+		runIterations(t, iterations, state)
+	})
+
+	t.Run("one incorrect guess with victory", func(t *testing.T) {
+		iterations := []stateIteration{
+			{true, anyhiddenRune, 5, 0, ongoing},
+			{true, anyhiddenRune, 10, 0, ongoing},
+			{true, anyhiddenRune, 15, 0, ongoing},
+			{true, nonExistantRune, 13, 1, ongoing},
+			{true, anyhiddenRune, 18, 1, ongoing},
+			{true, anyhiddenRune, 23, 1, ongoing},
+			{false, anyhiddenRune, 28, 1, victory},
 		}
 		state := newSessionState(make(chan bool, 100), difficulties[0])
 		runIterations(t, iterations, state)
@@ -70,18 +98,32 @@ func TestState(t *testing.T) {
 
 func runIterations(t *testing.T, iterations []stateIteration, state *sessionState) {
 	for _, iteration := range iterations {
-		var hiddenRune rune
 		if iteration.hideRune {
-			hiddenRune = state.hideRune()
+			state.hideRune()
 		}
 
-		if iteration.input != none {
-			switch iteration.input {
-			case correct:
-				state.inputRunePress(hiddenRune)
-			case incorrect:
-				state.inputRunePress('-')
+		switch iteration.input {
+		case anyhiddenRune:
+			for index, r := range state.gameBoard {
+				if r == fullBlock {
+					for r2, index2 := range state.runePositions {
+						if index == index2 {
+							state.inputRunePress(r2)
+							break
+						}
+					}
+					break
+				}
 			}
+		case anyShownRune:
+			for _, r := range state.gameBoard {
+				if r != checkMark && r != fullBlock {
+					state.inputRunePress(r)
+					break
+				}
+			}
+		case nonExistantRune:
+			state.inputRunePress('-')
 		}
 
 		if iteration.expectedInvalidKeyPresses != state.invalidKeyPresses {
@@ -90,6 +132,10 @@ func runIterations(t *testing.T, iterations []stateIteration, state *sessionStat
 
 		if iteration.expectedScore != state.score {
 			t.Errorf("score %d, expected %d", state.score, iteration.expectedScore)
+		}
+
+		if iteration.expectedGameState != state.currentGameState {
+			t.Errorf("gamestate %d, expected %d", state.currentGameState, iteration.expectedGameState)
 		}
 	}
 }
