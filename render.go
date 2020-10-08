@@ -109,20 +109,25 @@ func (r *renderer) drawGameBoard(targetScreen tcell.Screen, session *sessionStat
 	switch session.currentGameState {
 	case victory:
 		r.printLine(targetScreen, victoryMessage, width/2-len(victoryMessage)/2, 2)
-		scoreMessage := r.createScoreMessage(session)
-		r.printLine(targetScreen, scoreMessage, width/2-len(scoreMessage)/2, 4)
-		invalidKeyPressesMessage := r.createInvalidKeyPressesMessage(session)
-		r.printLine(targetScreen, invalidKeyPressesMessage, width/2-len(invalidKeyPressesMessage)/2, 5)
-		r.printLine(targetScreen, restartMessage, width/2-len(restartMessage)/2, 7)
 	case gameOver:
 		r.printLine(targetScreen, gameOverMessage, width/2-len(gameOverMessage)/2, 2)
-		scoreMessage := r.createScoreMessage(session)
-		r.printLine(targetScreen, scoreMessage, width/2-len(scoreMessage)/2, 4)
-		invalidKeyPressesMessage := r.createInvalidKeyPressesMessage(session)
-		r.printLine(targetScreen, invalidKeyPressesMessage, width/2-len(invalidKeyPressesMessage)/2, 5)
-		r.printLine(targetScreen, restartMessage, width/2-len(restartMessage)/2, 7)
 	}
+
+	if session.currentGameState != ongoing {
+		r.printGameResults(width, targetScreen, session)
+	}
+
 	targetScreen.Show()
+}
+
+// printGameResults prints the score, amount of invalid key presses and
+// information on how to restart or get to the menu.
+func (r *renderer) printGameResults(width int, targetScreen tcell.Screen, session *sessionState) {
+	scoreMessage := r.createScoreMessage(session)
+	r.printLine(targetScreen, scoreMessage, width/2-len(scoreMessage)/2, 4)
+	invalidKeyPressesMessage := r.createInvalidKeyPressesMessage(session)
+	r.printLine(targetScreen, invalidKeyPressesMessage, width/2-len(invalidKeyPressesMessage)/2, 5)
+	r.printLine(targetScreen, restartMessage, width/2-len(restartMessage)/2, 7)
 }
 
 func (r *renderer) createInvalidKeyPressesMessage(session *sessionState) string {
