@@ -16,7 +16,7 @@ const (
 
 var titleStyle = tcell.StyleDefault.Bold(true)
 
-// renderer represents a utility object to present a sessionState on a
+// renderer represents a utility object to present a gameSession on a
 // terminal screen.
 type renderer struct {
 	horizontalSpacing int
@@ -24,7 +24,7 @@ type renderer struct {
 }
 
 // newRenderer creates a new reusable renderer. It can be used for any
-// sessionState and any screen. It is also able to draw the game menu.
+// gameSession and any screen. It is also able to draw the game menu.
 // The renderer itself is stateless, which is why it can be used for
 // multiple sessions and screens. Technically, you could draw on multiple
 // screens at once.
@@ -76,8 +76,8 @@ func getHorizontalCenterForText(screenWidth int, text string) int {
 	return screenWidth/2 - len(text)/2
 }
 
-// drawGameBoard fills the targetScreen with data from the passed sessionState.
-func (r *renderer) drawGameBoard(targetScreen tcell.Screen, session *sessionState) {
+// drawGameBoard fills the targetScreen with data from the passed gameSession.
+func (r *renderer) drawGameBoard(targetScreen tcell.Screen, session *gameSession) {
 	boardWidth := (session.difficulty.rowCount / 2 * (r.horizontalSpacing + 1))
 	boardHeight := (session.difficulty.columnCount / 2 * (r.verticalSpacing + 1))
 
@@ -107,14 +107,14 @@ func (r *renderer) drawGameBoard(targetScreen tcell.Screen, session *sessionStat
 		nextY += r.verticalSpacing + 1
 	}
 
-	switch session.currentGameState {
+	switch session.state {
 	case victory:
 		r.printStyledLine(targetScreen, victoryMessage, titleStyle, width/2-len(victoryMessage)/2, 2)
 	case gameOver:
 		r.printStyledLine(targetScreen, gameOverMessage, titleStyle, width/2-len(gameOverMessage)/2, 2)
 	}
 
-	if session.currentGameState != ongoing {
+	if session.state != ongoing {
 		r.printGameResults(width, targetScreen, session)
 	}
 
@@ -123,7 +123,7 @@ func (r *renderer) drawGameBoard(targetScreen tcell.Screen, session *sessionStat
 
 // printGameResults prints the score, amount of invalid key presses and
 // information on how to restart or get to the menu.
-func (r *renderer) printGameResults(width int, targetScreen tcell.Screen, session *sessionState) {
+func (r *renderer) printGameResults(width int, targetScreen tcell.Screen, session *gameSession) {
 	scoreMessage := r.createScoreMessage(session)
 	r.printLine(targetScreen, scoreMessage, width/2-len(scoreMessage)/2, 4)
 	invalidKeyPressesMessage := r.createInvalidKeyPressesMessage(session)
@@ -131,11 +131,11 @@ func (r *renderer) printGameResults(width int, targetScreen tcell.Screen, sessio
 	r.printLine(targetScreen, restartMessage, width/2-len(restartMessage)/2, 7)
 }
 
-func (r *renderer) createInvalidKeyPressesMessage(session *sessionState) string {
+func (r *renderer) createInvalidKeyPressesMessage(session *gameSession) string {
 	return fmt.Sprintf("Amount of invalid key presses: %d", session.invalidKeyPresses)
 }
 
-func (r *renderer) createScoreMessage(session *sessionState) string {
+func (r *renderer) createScoreMessage(session *gameSession) string {
 	return fmt.Sprintf("Your score is %d out of possible %d",
 		session.score, len(session.gameBoard)*session.difficulty.correctGuessPoints)
 }

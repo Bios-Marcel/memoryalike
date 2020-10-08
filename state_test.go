@@ -42,7 +42,7 @@ func TestState(t *testing.T) {
 			{true, none, 0, 0, ongoing},
 			{true, none, 0, 0, gameOver},
 		}
-		state := newSessionState(make(chan bool, 100), testDifficulty)
+		state := newGameSession(make(chan bool, 100), testDifficulty)
 		runIterations(t, iterations, state)
 	})
 
@@ -53,7 +53,7 @@ func TestState(t *testing.T) {
 			{false, nonExistantRune, -6, 3, ongoing},
 			{false, nonExistantRune, -8, 4, ongoing},
 		}
-		state := newSessionState(make(chan bool, 100), testDifficulty)
+		state := newGameSession(make(chan bool, 100), testDifficulty)
 		runIterations(t, iterations, state)
 	})
 
@@ -64,7 +64,7 @@ func TestState(t *testing.T) {
 			{false, anyShownRune, -6, 3, ongoing},
 			{false, anyShownRune, -8, 4, ongoing},
 		}
-		state := newSessionState(make(chan bool, 100), testDifficulty)
+		state := newGameSession(make(chan bool, 100), testDifficulty)
 		runIterations(t, iterations, state)
 	})
 
@@ -77,7 +77,7 @@ func TestState(t *testing.T) {
 			{true, anyhiddenRune, 25, 0, ongoing},
 			{true, anyhiddenRune, 30, 0, victory},
 		}
-		state := newSessionState(make(chan bool, 100), testDifficulty)
+		state := newGameSession(make(chan bool, 100), testDifficulty)
 		runIterations(t, iterations, state)
 	})
 
@@ -90,7 +90,7 @@ func TestState(t *testing.T) {
 			{true, anyhiddenRune, 18, 1, ongoing},
 			{true, anyhiddenRune, 23, 1, ongoing},
 		}
-		state := newSessionState(make(chan bool, 100), testDifficulty)
+		state := newGameSession(make(chan bool, 100), testDifficulty)
 		runIterations(t, iterations, state)
 	})
 
@@ -104,12 +104,12 @@ func TestState(t *testing.T) {
 			{true, anyhiddenRune, 23, 1, ongoing},
 			{false, anyhiddenRune, 28, 1, victory},
 		}
-		state := newSessionState(make(chan bool, 100), testDifficulty)
+		state := newGameSession(make(chan bool, 100), testDifficulty)
 		runIterations(t, iterations, state)
 	})
 }
 
-func runIterations(t *testing.T, iterations []stateIteration, state *sessionState) {
+func runIterations(t *testing.T, iterations []stateIteration, state *gameSession) {
 	for _, iteration := range iterations {
 		if iteration.hideRune {
 			state.hideRune()
@@ -142,8 +142,8 @@ func runIterations(t *testing.T, iterations []stateIteration, state *sessionStat
 			t.Errorf("score %d, expected %d", state.score, iteration.expectedScore)
 		}
 
-		if iteration.expectedGameState != state.currentGameState {
-			t.Errorf("gamestate %d, expected %d", state.currentGameState, iteration.expectedGameState)
+		if iteration.expectedGameState != state.state {
+			t.Errorf("gamestate %d, expected %d", state.state, iteration.expectedGameState)
 		}
 	}
 }

@@ -11,10 +11,6 @@ const (
 	checkMark = '✓'
 )
 
-// currentMenuState is global in order to remember the menu state between
-// sessions. It's on purpose, not by accident.
-var currentMenuState = newMenuState()
-
 func main() {
 	screen, screenCreationError := createScreen()
 	if screenCreationError != nil {
@@ -26,13 +22,16 @@ func main() {
 
 	//renderer used for drawing the board and the menu.
 	renderer := newRenderer()
+	//menuState is reused throughout the runtime of the app. This allows
+	//us to remember the selection inbetween sessions.
+	menuState := newMenuState()
 
 	//blocks till it's closed.
-	openMenu(screen, renderer)
+	openMenu(menuState, screen, renderer)
 
 	renderNotificationChannel := make(chan bool)
-	currentSessionState := newSessionState(renderNotificationChannel, currentMenuState.getDiffculty())
-	currentSessionState.startRuneHidingCoroutine()
+	gameSession := newGameSession(renderNotificationChannel, menuState.getDiffculty())
+	gameSession.startRuneHidingCoroutine()
 
 	//Listen for key input on the gameboard.
 	go func() {
@@ -44,52 +43,52 @@ func main() {
 					os.Exit(0)
 				} else if event.Key() == tcell.KeyEscape {
 					//SURRENDER!
-					oldSession := currentSessionState
-					oldSession.mutex.Lock()
+					oldGameSession := gameSession
+					oldGameSession.mutex.Lock()
 
 					//When hitting ESC twice, e.g. when already in the
 					//end-screen, we want to go to the menu instead.
-					if oldSession.currentGameState != ongoing {
-						openMenu(screen, renderer)
+					if oldGameSession.state != ongoing {
+						openMenu(menuState, screen, renderer)
 						//We have to reset the state, as it's still in the
 						//"game over" state.
-						currentSessionState = newSessionState(renderNotificationChannel,
-							currentMenuState.getDiffculty())
-						currentSessionState.startRuneHidingCoroutine()
+						gameSession = newGameSession(renderNotificationChannel,
+							menuState.getDiffculty())
+						gameSession.startRuneHidingCoroutine()
 					} else {
-						oldSession.currentGameState = gameOver
+						oldGameSession.state = gameOver
 					}
-					oldSession.mutex.Unlock()
+					oldGameSession.mutex.Unlock()
 					renderNotificationChannel <- true
 				} else if event.Key() == tcell.KeyCtrlR {
 					//RESTART!
 					//Remove previous game over message and such and create
 					//a fresh state, as we needn't save any information for
 					//the next session.
-					oldSession := currentSessionState
-					oldSession.mutex.Lock()
+					oldGameSession := gameSession
+					oldGameSession.mutex.Lock()
 
 					//Make sure the state knows it's supposed to be dead.
-					oldSession.currentGameState = gameOver
+					oldGameSession.state = gameOver
 					screen.Clear()
-					currentSessionState = newSessionState(renderNotificationChannel,
-						currentMenuState.getDiffculty())
-					currentSessionState.startRuneHidingCoroutine()
-					currentSessionState.mutex.Lock()
+					gameSession = newGameSession(renderNotificationChannel,
+						menuState.getDiffculty())
+					gameSession.startRuneHidingCoroutine()
+					gameSession.mutex.Lock()
 
-					oldSession.mutex.Unlock()
-					currentSessionState.mutex.Unlock()
+					oldGameSession.mutex.Unlock()
+					gameSession.mutex.Unlock()
 					renderNotificationChannel <- true
 
 				} else if event.Key() == tcell.KeyRune {
-					currentSessionState.mutex.Lock()
-					currentSessionState.inputRunePress(event.Rune())
-					currentSessionState.mutex.Unlock()
+					gameSession.mutex.Lock()
+					gameSession.inputRunePress(event.Rune())
+					gameSession.mutex.Unlock()
 				}
 			case *tcell.EventResize:
-				currentSessionState.mutex.Lock()
+				gameSession.mutex.Lock()
 				screen.Clear()
-				currentSessionState.mutex.Unlock()
+				gameSession.mutex.Unlock()
 				renderNotificationChannel <- true
 				//TODO Handle resize; Validate session;
 			default:
@@ -105,9 +104,9 @@ func main() {
 
 	for {
 		//We start lock before draw in order to avoid drawing crap.
-		currentSessionState.mutex.Lock()
-		renderer.drawGameBoard(screen, currentSessionState)
-		currentSessionState.mutex.Unlock()
+		gameSession.mutex.Lock()
+		renderer.drawGameBoard(screen, gameSession)
+		gameSession.mutex.Unlock()
 
 		<-renderNotificationChannel
 	}
@@ -115,25 +114,25 @@ func main() {
 
 // openMenu draws the game menu and listens for keyboard input.
 // This method blocks until a difficulty has been selected.
-func openMenu(targetScreen tcell.Screen, renderer *renderer) {
+func openMenu(menuState *menuState, targetScreen tcell.Screen, renderer *renderer) {
 MENU_KEY_LOOP:
 	for {
 		//We draw the menu initially and then once after any event.
-		renderer.drawMenu(targetScreen, currentMenuState)
+		renderer.drawMenu(targetScreen, menuState)
 
 		switch event := targetScreen.PollEvent().(type) {
 		case *tcell.EventKey:
 			if event.Key() == tcell.KeyDown || event.Rune() == 's' || event.Rune() == 'k' {
-				if currentMenuState.selectedDifficulty >= len(difficulties)-1 {
-					currentMenuState.selectedDifficulty = 0
+				if menuState.selectedDifficulty >= len(difficulties)-1 {
+					menuState.selectedDifficulty = 0
 				} else {
-					currentMenuState.selectedDifficulty++
+					menuState.selectedDifficulty++
 				}
 			} else if event.Key() == tcell.KeyUp || event.Rune() == 'w' || event.Rune() == 'j' {
-				if currentMenuState.selectedDifficulty <= 0 {
-					currentMenuState.selectedDifficulty = len(difficulties) - 1
+				if menuState.selectedDifficulty <= 0 {
+					menuState.selectedDifficulty = len(difficulties) - 1
 				} else {
-					currentMenuState.selectedDifficulty--
+					menuState.selectedDifficulty--
 				}
 			} else if event.Key() == tcell.KeyEnter {
 				//We clear in order to get rid of the menu for sure.

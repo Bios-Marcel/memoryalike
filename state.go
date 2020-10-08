@@ -30,16 +30,17 @@ const (
 	victory
 )
 
-// sessionState represents all game state for a session. All operations on
+// gameSession represents all game state for a session. All operations on
 // this state should make sure that the state is locked using the internal
 // mutex.
-type sessionState struct {
+type gameSession struct {
 	mutex                     *sync.Mutex
 	renderNotificationChannel chan bool
 
-	currentGameState gameState
-	score            int
+	state gameState
+	score int
 	//invalidKeyPresses counts the invalid keyPresses made by the player.
+	//This only tracks runes, not stuff like CTRL, ArrowUp ...
 	invalidKeyPresses int
 
 	gameBoard     []*gameBoardCell
@@ -48,9 +49,9 @@ type sessionState struct {
 	difficulty *difficulty
 }
 
-// newSessionState produces a ready-to-use session state. The ticker that
+// newGameSession produces a ready-to-use session state. The ticker that
 // hides cell contents is started on construction.
-func newSessionState(renderNotificationChannel chan bool, difficulty *difficulty) *sessionState {
+func newGameSession(renderNotificationChannel chan bool, difficulty *difficulty) *gameSession {
 	characterSet, charSetError := getCharacterSet(difficulty.rowCount*difficulty.columnCount, difficulty.runePools...)
 	if charSetError != nil {
 		panic(charSetError)
@@ -71,11 +72,11 @@ func newSessionState(renderNotificationChannel chan bool, difficulty *difficulty
 		indicesToHide[a], indicesToHide[b] = indicesToHide[b], indicesToHide[a]
 	})
 
-	return &sessionState{
+	return &gameSession{
 		mutex:                     &sync.Mutex{},
 		renderNotificationChannel: renderNotificationChannel,
 
-		currentGameState: ongoing,
+		state: ongoing,
 
 		gameBoard:     gameBoard,
 		indicesToHide: indicesToHide,
@@ -88,7 +89,7 @@ func newSessionState(renderNotificationChannel chan bool, difficulty *difficulty
 // gameboard each X milliseconds. X is defined by the hidingTime defined in
 // the referenced difficulty of the session. If no more characters can be
 // hidden or the game has ended, this coroutine exists.
-func (s *sessionState) startRuneHidingCoroutine() {
+func (s *gameSession) startRuneHidingCoroutine() {
 	go func() {
 		<-time.NewTimer(s.difficulty.startDelay).C
 
@@ -96,7 +97,7 @@ func (s *sessionState) startRuneHidingCoroutine() {
 		for {
 			<-characterHideTicker.C
 
-			if len(s.indicesToHide) == 0 || s.currentGameState != ongoing {
+			if len(s.indicesToHide) == 0 || s.state != ongoing {
 				characterHideTicker.Stop()
 				break
 			}
@@ -109,7 +110,7 @@ func (s *sessionState) startRuneHidingCoroutine() {
 }
 
 // hideRune hides a rune that's currently visible on the gameboard.
-func (s *sessionState) hideRune() {
+func (s *gameSession) hideRune() {
 	nextIndexToHide := len(s.indicesToHide) - 1
 	if nextIndexToHide != -1 {
 		s.gameBoard[s.indicesToHide[nextIndexToHide]].state = hidden
@@ -119,12 +120,12 @@ func (s *sessionState) hideRune() {
 }
 
 // applyKeyEvents checks the key-events for possible matches and updates the
-// sessionState accordingly. Meaning that if a match between a hidden
+// gameSession accordingly. Meaning that if a match between a hidden
 // cell, it's underlying character and the input rune is found, the player
 // gets a point.
-func (s *sessionState) inputRunePress(pressed rune) {
+func (s *gameSession) inputRunePress(pressed rune) {
 	//Game is already over. All further checks are unnecessary.
-	if s.currentGameState != ongoing {
+	if s.state != ongoing {
 		return
 	}
 
@@ -148,9 +149,9 @@ func (s *sessionState) inputRunePress(pressed rune) {
 
 // updateGameState determines whether the game is over and what the players
 // score is.
-func (s *sessionState) updateGameState() {
+func (s *gameSession) updateGameState() {
 	//Game is already over. All further checks are unnecessary.
-	if s.currentGameState != ongoing {
+	if s.state != ongoing {
 		return
 	}
 
@@ -171,16 +172,16 @@ func (s *sessionState) updateGameState() {
 	//if at least 40 percent of the board is hidden, the player loses.
 	//In case of a normal game for example, this should mean 4 hidden cells.
 	if hiddenCellCount != 0 && float32(hiddenCellCount)/float32(len(s.gameBoard)) >= 0.4 {
-		s.currentGameState = gameOver
+		s.state = gameOver
 	} else if shownCellCount == 0 && hiddenCellCount == 0 {
 		//The game is only over if all cells have been guessed correctly
 
 		//Even if all cells have been guessed correctly, we deem zero score
 		//as a loss, as the player probably smashed his keyboard randomly.
 		if s.score <= 0 {
-			s.currentGameState = gameOver
+			s.state = gameOver
 		} else {
-			s.currentGameState = victory
+			s.state = victory
 		}
 	}
 
