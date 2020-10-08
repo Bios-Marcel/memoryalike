@@ -7,11 +7,13 @@ import (
 )
 
 const (
-	gameOverMessage = "GAME OVER"
-	victoryMessage  = "Congratulations! You have won!"
-	restartMessage  = "Hit 'Ctrl R' to restart or 'ESC' to show the menu."
-
 	chooseDifficultyText = "Choose difficulty"
+	gameOverMessage      = "GAME OVER"
+	victoryMessage       = "Congratulations! You have won!"
+	restartMessage       = "Hit 'Ctrl R' to restart or 'ESC' to show the menu."
+
+	fullBlock = '█'
+	checkMark = '✓'
 )
 
 var titleStyle = tcell.StyleDefault.Bold(true)

@@ -6,11 +6,6 @@ import (
 	"github.com/gdamore/tcell"
 )
 
-const (
-	fullBlock = '█'
-	checkMark = '✓'
-)
-
 func main() {
 	screen, screenCreationError := createScreen()
 	if screenCreationError != nil {
