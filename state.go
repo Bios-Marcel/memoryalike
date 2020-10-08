@@ -22,6 +22,14 @@ type gameBoardCell struct {
 	state     cellState
 }
 
+type gameState int
+
+const (
+	ongoing = iota
+	gameOver
+	victory
+)
+
 // sessionState represents all game state for a session. All operations on
 // this state should make sure that the state is locked using the internal
 // mutex.

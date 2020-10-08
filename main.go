@@ -11,14 +11,6 @@ const (
 	checkMark = '✓'
 )
 
-type gameState int
-
-const (
-	ongoing = iota
-	gameOver
-	victory
-)
-
 // currentMenuState is global in order to remember the menu state between
 // sessions. It's on purpose, not by accident.
 var currentMenuState = newMenuState()
