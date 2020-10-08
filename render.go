@@ -14,6 +14,8 @@ const (
 	chooseDifficultyText = "Choose difficulty"
 )
 
+var titleStyle = tcell.StyleDefault.Bold(true)
+
 // renderer represents a utility object to present a sessionState on a
 // terminal screen.
 type renderer struct {
@@ -39,7 +41,6 @@ func newRenderer() *renderer {
 func (r *renderer) drawMenu(targetScreen tcell.Screen, sourceMenuState *menuState) {
 	targetScreen.Clear()
 
-	instructionStyle := tcell.StyleDefault.Bold(true)
 	unselectedStyle := tcell.StyleDefault
 	selectedStyle := tcell.StyleDefault.Reverse(true)
 
@@ -54,7 +55,7 @@ func (r *renderer) drawMenu(targetScreen tcell.Screen, sourceMenuState *menuStat
 	screenWidth, _ := targetScreen.Size()
 
 	//Draw "Choose difficulties text"
-	r.printStyledLine(targetScreen, chooseDifficultyText, instructionStyle,
+	r.printStyledLine(targetScreen, chooseDifficultyText, titleStyle,
 		getHorizontalCenterForText(screenWidth, chooseDifficultyText), 2)
 
 	//Draw difficulties into menu.
@@ -108,9 +109,9 @@ func (r *renderer) drawGameBoard(targetScreen tcell.Screen, session *sessionStat
 
 	switch session.currentGameState {
 	case victory:
-		r.printLine(targetScreen, victoryMessage, width/2-len(victoryMessage)/2, 2)
+		r.printStyledLine(targetScreen, victoryMessage, titleStyle, width/2-len(victoryMessage)/2, 2)
 	case gameOver:
-		r.printLine(targetScreen, gameOverMessage, width/2-len(gameOverMessage)/2, 2)
+		r.printStyledLine(targetScreen, gameOverMessage, titleStyle, width/2-len(gameOverMessage)/2, 2)
 	}
 
 	if session.currentGameState != ongoing {
